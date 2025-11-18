@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
+    max-width: 500px;
+    margin: auto;
+    background: #fffbe6;
+  }
+  h2 { text-align: center; font-size: 28px; margin-bottom: 15px; }
+  input, select, button {
+    font-size: 18px;
+    margin: 5px 0;
+    padding: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+  }
+  button:hover { background-color: #45a049; }
+  ul { list-style: none; padding-left: 0; margin-top: 20px; }
+  li {
+    background: linear-gradient(to bottom, #fffbe6 50%, #e0e0e0 50%);
+    background-size: 100% 40px;
+    padding: 10px;
+    margin-bottom: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  h3 { font-size: 22px; margin-top: 20px; }
+  .date-header { font-weight: bold; margin-top: 15px; font-size: 20px; }
+</style>
+</head>
+<body>
+<h2>Expense Tracker</h2>
+
+<input type="number" id="amount" placeholder="Amount" />
+<select id="category">
+  <option value="Food">Food</option>
+  <option value="Travel">Travel</option>
+  <option value="Misc">Misc</option>
+</select>
+<input type="text" id="note" placeholder="Optional Note" />
+<button onclick="addExpense()">Add</button>
+
+<h3>Today's Total: Rs <span id="dailyTotal">0</span></h3>
+<ul id="expenseList"></ul>
+
+<script>
+let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+
+function getDayString(dateStr) {
+    const date = new Date(dateStr);
+    const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString(undefined, options); // e.g., "Mon, 18 Nov 2025"
+}
+
+function saveExpenses() {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+}
+
+function renderExpenses() {
+    const list = document.getElementById('expenseList');
+    const dailyTotalEl = document.getElementById('dailyTotal');
+    list.innerHTML = '';
+    let dailyTotal = 0;
+    let lastDate = '';
+
+    expenses.forEach((exp, index) => {
+        // Add date header if new day
+        if(exp.date !== lastDate) {
+            const dateHeader = document.createElement('li');
+            dateHeader.textContent = getDayString(exp.date);
+            dateHeader.className = 'date-header';
+            list.appendChild(dateHeader);
+            lastDate = exp.date;
+        }
+
+        const li = document.createElement('li');
+        li.textContent = `Rs ${exp.amount} - ${exp.category} ${exp.note ? '(' + exp.note + ')' : ''}`;
+        li.onclick = () => {
+            if(confirm('Delete this expense?')) {
+                expenses.splice(index, 1);
+                saveExpenses();
+                renderExpenses();
+            }
+        };
+        list.appendChild(li);
+
+        if(exp.date === today) dailyTotal += Number(exp.amount);
+    });
+
+    dailyTotalEl.textContent = dailyTotal;
+}
+
+function addExpense() {
+    const amount = document.getElementById('amount').value;
+    const category = document.getElementById('category').value;
+    const note = document.getElementById('note').value;
+    if(!amount) return alert('Enter amount!');
+    
+    expenses.push({amount, category, note, date: today});
+    saveExpenses();
+    renderExpenses();
+    document.getElementById('amount').value = '';
+    document.getElementById('note').value = '';
+}
+
+// Update today variable on load (in case browser left open overnight)
+function checkNewDay() {
+    const current = new Date().toISOString().split('T')[0];
+    if(current !== today) {
+        today = current;
+        renderExpenses(); // daily total resets automatically
+    }
+}
+
+// Check for new day every minute
+setInterval(checkNewDay, 60000);
+
+renderExpenses();
+</script>
+</body>
+</html>
