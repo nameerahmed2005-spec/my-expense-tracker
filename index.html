@@ -24,12 +24,6 @@ border-radius:14px;
 box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
-h2{
-text-align:center;
-margin-bottom:20px;
-font-weight:600;
-}
-
 input,select{
 width:100%;
 padding:14px;
@@ -37,13 +31,6 @@ margin-bottom:12px;
 border-radius:8px;
 border:1px solid #ddd;
 font-size:16px;
-transition:0.2s;
-}
-
-input:focus,select:focus{
-outline:none;
-border-color:#4caf50;
-box-shadow:0 0 0 2px rgba(76,175,80,0.2);
 }
 
 button{
@@ -54,18 +41,7 @@ color:white;
 border:none;
 border-radius:8px;
 font-size:17px;
-font-weight:500;
 cursor:pointer;
-transition:0.2s;
-}
-
-button:hover{
-background:#43a047;
-}
-
-h3{
-margin-top:20px;
-font-weight:600;
 }
 
 ul{
@@ -82,58 +58,61 @@ border-radius:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-border:1px solid #eee;
 }
 
 .small-btn{
 width:auto;
 padding:6px 12px;
 margin-left:6px;
-border-radius:6px;
-font-size:14px;
+}
+
+.day-header{
+font-weight:bold;
+margin-top:20px;
+margin-bottom:10px;
 }
 
 </style>
-
-
 </head>
 
 <body>
-<div class="container">
 
+<div class="container">
 
 <h2>Expense Tracker</h2>
 
 <input id="amount" type="number" placeholder="Amount">
+
 <select id="category">
 <option>Food</option>
 <option>Travel</option>
 <option>Misc</option>
 </select>
+
 <input id="note" placeholder="Optional Note">
 
 <button id="addBtn">Add</button>
 
-<h3>Total Rs <span id="dailyTotal">0</span></h3>
+<h3 id="grandTotal">Grand Total Rs 0</h3>
 
 <ul id="expenseList"></ul>
 
-<!-- FIREBASE NON-MODULE VERSION -->
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
 
-const firebaseConfig = {
+const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
 authDomain:"expense-tracker-2796a.firebaseapp.com",
-databaseURL:"https://expense-tracker-2796a-default-rtdb.asia-southeast1.firebasedatabase.app",
+databaseURL:"https://expense-tracker-2796a-default-rtdb.firebaseio.com",
 projectId:"expense-tracker-2796a",
 storageBucket:"expense-tracker-2796a.firebasestorage.app",
 messagingSenderId:"246479741004",
 appId:"1:246479741004:web:f486279bd9395547e114e9"
 };
-
 
 firebase.initializeApp(firebaseConfig);
 
@@ -145,6 +124,17 @@ let editingID=null;
 
 const addBtn=document.getElementById("addBtn");
 
+/* ⭐ CUSTOM DAY FUNCTION (7AM RESET) */
+function getLogicalDate(){
+
+const now=new Date();
+
+/* shift back 7 hours */
+now.setHours(now.getHours()-7);
+
+return now.toISOString().split("T")[0];
+}
+
 expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
 renderExpenses();
@@ -154,9 +144,39 @@ function renderExpenses(){
 
 const list=document.getElementById("expenseList");
 list.innerHTML="";
-let total=0;
 
+let grandTotal=0;
+let grouped={};
+
+/* GROUP BY DATE */
 Object.entries(expenses).forEach(([id,exp])=>{
+
+if(!grouped[exp.date]) grouped[exp.date]=[];
+
+grouped[exp.date].push({id,...exp});
+
+grandTotal+=Number(exp.amount);
+
+});
+
+document.getElementById("grandTotal").textContent=
+`Grand Total Rs ${grandTotal}`;
+
+/* RENDER EACH DAY */
+
+Object.entries(grouped).sort().reverse().forEach(([day,entries])=>{
+
+let dayTotal=0;
+
+entries.forEach(e=> dayTotal+=Number(e.amount));
+
+const header=document.createElement("div");
+header.className="day-header";
+header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
+
+list.appendChild(header);
+
+entries.forEach(exp=>{
 
 const li=document.createElement("li");
 
@@ -172,7 +192,7 @@ editBtn.onclick=()=>{
 document.getElementById("amount").value=exp.amount;
 document.getElementById("category").value=exp.category;
 document.getElementById("note").value=exp.note;
-editingID=id;
+editingID=exp.id;
 addBtn.textContent="Update";
 };
 
@@ -182,7 +202,7 @@ deleteBtn.className="small-btn";
 
 deleteBtn.onclick=()=>{
 if(confirm("Delete this expense?")){
-expensesRef.child(id).remove();
+expensesRef.child(exp.id).remove();
 }
 };
 
@@ -192,13 +212,13 @@ btns.appendChild(deleteBtn);
 
 li.appendChild(text);
 li.appendChild(btns);
-list.appendChild(li);
 
-total+=Number(exp.amount);
+list.appendChild(li);
 
 });
 
-document.getElementById("dailyTotal").textContent=total;
+});
+
 }
 
 addBtn.onclick=()=>{
@@ -209,12 +229,15 @@ const noteVal=document.getElementById("note").value;
 
 if(!amountVal) return;
 
+const logicalDate=getLogicalDate();
+
 if(editingID){
 
 expensesRef.child(editingID).set({
 amount:amountVal,
 category:categoryVal,
-note:noteVal
+note:noteVal,
+date:logicalDate
 });
 
 editingID=null;
@@ -225,7 +248,8 @@ addBtn.textContent="Add";
 expensesRef.push({
 amount:amountVal,
 category:categoryVal,
-note:noteVal
+note:noteVal,
+date:logicalDate
 });
 }
 
@@ -235,6 +259,5 @@ document.getElementById("note").value="";
 
 </script>
 
-</div>
 </body>
 </html>
