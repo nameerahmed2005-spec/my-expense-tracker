@@ -209,6 +209,12 @@ text-align:left;
 display:block;
 }
 
+#expenseList{
+list-style:none;
+padding-left:0;
+margin:0;
+}
+
 </style>
 
 </head>
@@ -271,10 +277,10 @@ const grandTotalEl=document.getElementById("grandTotal");
 function applyTheme(){
 if(localStorage.getItem("theme")==="light"){
 document.body.classList.add("light");
-themeBtn.textContent="☀️";
+themeBtn.textContent="🌙";
 }else{
 document.body.classList.remove("light");
-themeBtn.textContent="🌙";
+themeBtn.textContent="☀️";
 }
 }
 
@@ -420,4 +426,5 @@ note.value="";
 
 </body>
 </html>
+
 
