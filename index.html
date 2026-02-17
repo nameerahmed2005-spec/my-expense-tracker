@@ -6,12 +6,12 @@
 
 <style>
 
-/* LIGHT THEME */
+/* LIGHT */
 :root{
 --bg:#f6f7fb;
 --card:#ffffff;
 --text:#111;
---input-bg:#ffffff;
+--input-bg:#f9fafb;
 --border:#e5e7eb;
 --item:#fafafa;
 --primary:#22c55e;
@@ -19,13 +19,13 @@
 --neutral:#e5e7eb;
 }
 
-/* DARK THEME */
+/* DARK */
 .dark{
 --bg:#0f1115;
 --card:#1a1d24;
 --text:#e6e6e6;
---input-bg:#12151b;
---border:#252a34;
+--input-bg:#171b22;
+--border:#222733;
 --item:#151922;
 --primary:#22c55e;
 --primary-hover:#16a34a;
@@ -40,7 +40,6 @@ padding:20px;
 display:flex;
 justify-content:center;
 color:var(--text);
-transition:0.25s;
 }
 
 .container{
@@ -49,31 +48,29 @@ max-width:500px;
 background:var(--card);
 padding:25px;
 border-radius:14px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
 position:relative;
 }
 
-/* FIXED INPUT STYLE */
-
+/* INPUTS FIXED */
 input,select{
 width:100%;
 padding:14px;
 margin-bottom:12px;
-border-radius:8px;
-border:1px solid var(--border);
+border-radius:10px;
+
+/* ⭐ softer border */
+border:1px solid rgba(255,255,255,0.06);
+
 background:var(--input-bg);
 color:var(--text);
 font-size:16px;
 outline:none;
-box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
 }
 
 input:focus,select:focus{
 border-color:var(--primary);
-box-shadow:0 0 0 2px rgba(34,197,94,0.2);
 }
-
-/* PRIMARY BUTTON */
 
 #addBtn{
 width:100%;
@@ -82,15 +79,8 @@ background:var(--primary);
 color:white;
 border:none;
 border-radius:8px;
-font-size:17px;
 cursor:pointer;
 }
-
-#addBtn:hover{
-background:var(--primary-hover);
-}
-
-/* SMALL BUTTONS */
 
 .small-btn{
 width:auto;
@@ -101,11 +91,6 @@ color:var(--text);
 border:none;
 border-radius:6px;
 cursor:pointer;
-}
-
-ul{
-list-style:none;
-padding:0;
 }
 
 li{
@@ -119,29 +104,16 @@ align-items:center;
 border:1px solid var(--border);
 }
 
-.day-header{
-font-weight:bold;
-margin-top:20px;
-margin-bottom:10px;
-}
-
-/* FLOATING THEME BUTTON */
-
 .theme-toggle{
 position:absolute;
 top:15px;
 right:15px;
-width:38px;
-height:38px;
+width:36px;
+height:36px;
 border-radius:50%;
 border:none;
 background:var(--neutral);
-color:var(--text);
 cursor:pointer;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:18px;
 }
 
 </style>
@@ -178,6 +150,8 @@ font-size:18px;
 
 <script>
 
+/* FIREBASE */
+
 const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
 authDomain:"expense-tracker-2796a.firebaseapp.com",
@@ -193,34 +167,33 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 const expensesRef=db.ref("expenses");
 
+/* STATE */
+
 let expenses={};
 let editingID=null;
-let editingDate=null; // ⭐ store original date safely
+let editingDate=null;
 
-const addBtn=document.getElementById("addBtn");
-
-/* THEME TOGGLE */
+/* THEME */
 
 const themeBtn=document.getElementById("themeToggle");
 
 function applyTheme(){
-const saved=localStorage.getItem("theme");
-if(saved==="dark"){
+if(localStorage.getItem("theme")==="dark"){
 document.body.classList.add("dark");
 themeBtn.textContent="☀️";
 }
 }
 
-themeBtn.onclick=function(){
+themeBtn.onclick=()=>{
 document.body.classList.toggle("dark");
-const isDark=document.body.classList.contains("dark");
-localStorage.setItem("theme",isDark?"dark":"light");
-themeBtn.textContent=isDark?"☀️":"🌙";
+const dark=document.body.classList.contains("dark");
+localStorage.setItem("theme",dark?"dark":"light");
+themeBtn.textContent=dark?"☀️":"🌙";
 };
 
 applyTheme();
 
-/* 7AM LOGICAL DAY */
+/* LOGICAL DAY (7AM) */
 
 function getLogicalDate(){
 const d=new Date();
@@ -235,59 +208,35 @@ expenses=snapshot.val()||{};
 renderExpenses();
 });
 
+/* RENDER */
+
 function renderExpenses(){
 
 const list=document.getElementById("expenseList");
 list.innerHTML="";
 
-let grandTotal=0;
-let grouped={};
+let total=0;
 
 Object.entries(expenses).forEach(([id,exp])=>{
 
-const date=exp.date || "No Date";
-
-if(!grouped[date]) grouped[date]=[];
-
-grouped[date].push({id,...exp});
-
-grandTotal+=Number(exp.amount||0);
-
-});
-
-document.getElementById("grandTotal").textContent=
-"Grand Total Rs "+grandTotal;
-
-Object.entries(grouped).sort().reverse().forEach(([day,entries])=>{
-
-let dayTotal=0;
-entries.forEach(e=>dayTotal+=Number(e.amount||0));
-
-const header=document.createElement("div");
-header.className="day-header";
-header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
-
-list.appendChild(header);
-
-entries.forEach(exp=>{
+total+=Number(exp.amount||0);
 
 const li=document.createElement("li");
 
 const text=document.createElement("span");
-text.textContent=
-`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
+text.textContent=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
 
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
 editBtn.className="small-btn";
 
 editBtn.onclick=()=>{
-document.getElementById("amount").value=exp.amount;
-document.getElementById("category").value=exp.category;
-document.getElementById("note").value=exp.note;
+amount.value=exp.amount;
+category.value=exp.category;
+note.value=exp.note;
 
-editingID=exp.id;
-editingDate=exp.date; // ⭐ save original date
+editingID=id;
+editingDate=exp.date; // ⭐ preserve original (even if undefined)
 
 addBtn.textContent="Update";
 };
@@ -298,7 +247,7 @@ deleteBtn.className="small-btn";
 
 deleteBtn.onclick=()=>{
 if(confirm("Delete this expense?")){
-expensesRef.child(exp.id).remove();
+expensesRef.child(id).remove();
 }
 };
 
@@ -313,29 +262,33 @@ list.appendChild(li);
 
 });
 
-});
-
+grandTotal.textContent="Grand Total Rs "+total;
 }
 
-/* ADD / UPDATE BUTTON */
+/* ADD / UPDATE */
 
-addBtn.onclick=function(){
+addBtn.onclick=()=>{
 
-const amountVal=document.getElementById("amount").value;
-const categoryVal=document.getElementById("category").value;
-const noteVal=document.getElementById("note").value;
+const amountVal=amount.value;
+const categoryVal=category.value;
+const noteVal=note.value;
 
 if(!amountVal) return;
 
 if(editingID){
 
-// ⭐ UPDATE without changing date
-expensesRef.child(editingID).set({
+// ⭐ DO NOT change date
+const updatedData={
 amount:amountVal,
 category:categoryVal,
-note:noteVal,
-date:editingDate
-});
+note:noteVal
+};
+
+if(editingDate !== undefined){
+updatedData.date=editingDate;
+}
+
+expensesRef.child(editingID).set(updatedData);
 
 editingID=null;
 editingDate=null;
@@ -352,12 +305,12 @@ date:getLogicalDate()
 
 }
 
-document.getElementById("amount").value="";
-document.getElementById("note").value="";
+amount.value="";
+note.value="";
+
 };
 
 </script>
 
 </body>
 </html>
-
