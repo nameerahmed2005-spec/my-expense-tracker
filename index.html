@@ -3,101 +3,27 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expense Tracker</title>
-
-<style>
-
-body{
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-background:#f6f7fb;
-margin:0;
-padding:20px;
-display:flex;
-justify-content:center;
-}
-
-.container{
-width:100%;
-max-width:500px;
-background:white;
-padding:25px;
-border-radius:14px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-}
-
-input,select{
-width:100%;
-padding:14px;
-margin-bottom:12px;
-border-radius:8px;
-border:1px solid #ddd;
-font-size:16px;
-}
-
-button{
-width:100%;
-padding:14px;
-background:#4caf50;
-color:white;
-border:none;
-border-radius:8px;
-font-size:17px;
-cursor:pointer;
-}
-
-ul{
-list-style:none;
-padding:0;
-margin-top:15px;
-}
-
-li{
-background:#fafafa;
-padding:14px;
-margin-bottom:10px;
-border-radius:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.small-btn{
-width:auto;
-padding:6px 12px;
-margin-left:6px;
-}
-
-.day-header{
-font-weight:bold;
-margin-top:20px;
-margin-bottom:10px;
-}
-
-</style>
 </head>
 
-<body>
-
-<div class="container">
+<body style="font-family:Arial;max-width:500px;margin:auto;padding:20px;background:#f6f7fb;">
 
 <h2>Expense Tracker</h2>
 
-<input id="amount" type="number" placeholder="Amount">
+<input id="amount" placeholder="Amount"><br><br>
 
 <select id="category">
 <option>Food</option>
 <option>Travel</option>
 <option>Misc</option>
-</select>
+</select><br><br>
 
-<input id="note" placeholder="Optional Note">
+<input id="note" placeholder="Optional Note"><br><br>
 
 <button id="addBtn">Add</button>
 
 <h3 id="grandTotal">Grand Total Rs 0</h3>
 
-<ul id="expenseList"></ul>
-
-</div>
+<div id="expenseList"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -122,98 +48,74 @@ const expensesRef=db.ref("expenses");
 let expenses={};
 let editingID=null;
 
-const addBtn=document.getElementById("addBtn");
-
-/* ⭐ CUSTOM DAY FUNCTION (7AM RESET) */
+/* ⭐ 7AM LOGICAL DATE */
 function getLogicalDate(){
 
-const now=new Date();
+const d=new Date();
+d.setHours(d.getHours()-7);
+return d.toISOString().split("T")[0];
 
-/* shift back 7 hours */
-now.setHours(now.getHours()-7);
-
-return now.toISOString().split("T")[0];
 }
 
 expensesRef.on("value",(snapshot)=>{
+
 expenses=snapshot.val()||{};
-renderExpenses();
+render();
+
 });
 
-function renderExpenses(){
+function render(){
 
-const list=document.getElementById("expenseList");
-list.innerHTML="";
+const container=document.getElementById("expenseList");
+container.innerHTML="";
 
-let grandTotal=0;
 let grouped={};
+let grandTotal=0;
 
-/* GROUP BY DATE */
+/* BACKWARD COMPATIBILITY */
 Object.entries(expenses).forEach(([id,exp])=>{
 
-if(!grouped[exp.date]) grouped[exp.date]=[];
+const date=exp.date || "old";
 
-grouped[exp.date].push({id,...exp});
+if(!grouped[date]) grouped[date]=[];
+
+grouped[date].push({id,...exp});
 
 grandTotal+=Number(exp.amount);
 
 });
 
 document.getElementById("grandTotal").textContent=
-`Grand Total Rs ${grandTotal}`;
-
-/* RENDER EACH DAY */
+"Grand Total Rs "+grandTotal;
 
 Object.entries(grouped).sort().reverse().forEach(([day,entries])=>{
 
 let dayTotal=0;
+entries.forEach(e=>dayTotal+=Number(e.amount));
 
-entries.forEach(e=> dayTotal+=Number(e.amount));
+const header=document.createElement("h4");
+header.textContent=day+" — Daily Total Rs "+dayTotal;
 
-const header=document.createElement("div");
-header.className="day-header";
-header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
-
-list.appendChild(header);
+container.appendChild(header);
 
 entries.forEach(exp=>{
 
-const li=document.createElement("li");
+const div=document.createElement("div");
 
-const text=document.createElement("span");
-text.textContent=
-`Rs ${exp.amount} - ${exp.category} ${exp.note? '('+exp.note+')':''}`;
+div.innerHTML=
+"Rs "+exp.amount+" - "+exp.category+" "+(exp.note||"");
 
-const editBtn=document.createElement("button");
-editBtn.textContent="Edit";
-editBtn.className="small-btn";
+const del=document.createElement("button");
+del.textContent="Delete";
 
-editBtn.onclick=()=>{
-document.getElementById("amount").value=exp.amount;
-document.getElementById("category").value=exp.category;
-document.getElementById("note").value=exp.note;
-editingID=exp.id;
-addBtn.textContent="Update";
-};
-
-const deleteBtn=document.createElement("button");
-deleteBtn.textContent="Delete";
-deleteBtn.className="small-btn";
-
-deleteBtn.onclick=()=>{
-if(confirm("Delete this expense?")){
+del.onclick=()=>{
+if(confirm("Delete?")){
 expensesRef.child(exp.id).remove();
 }
 };
 
-const btns=document.createElement("div");
-btns.appendChild(editBtn);
-btns.appendChild(deleteBtn);
-
-li.appendChild(text);
-li.appendChild(btns);
-
-list.appendChild(li);
+div.appendChild(del);
+container.appendChild(div);
 
 });
 
@@ -221,40 +123,21 @@ list.appendChild(li);
 
 }
 
-addBtn.onclick=()=>{
+document.getElementById("addBtn").onclick=()=>{
 
-const amountVal=document.getElementById("amount").value;
-const categoryVal=document.getElementById("category").value;
-const noteVal=document.getElementById("note").value;
+const amount=document.getElementById("amount").value;
+const category=document.getElementById("category").value;
+const note=document.getElementById("note").value;
 
-if(!amountVal) return;
-
-const logicalDate=getLogicalDate();
-
-if(editingID){
-
-expensesRef.child(editingID).set({
-amount:amountVal,
-category:categoryVal,
-note:noteVal,
-date:logicalDate
-});
-
-editingID=null;
-addBtn.textContent="Add";
-
-}else{
+if(!amount) return;
 
 expensesRef.push({
-amount:amountVal,
-category:categoryVal,
-note:noteVal,
-date:logicalDate
+amount:amount,
+category:category,
+note:note,
+date:getLogicalDate()
 });
-}
 
-document.getElementById("amount").value="";
-document.getElementById("note").value="";
 };
 
 </script>
