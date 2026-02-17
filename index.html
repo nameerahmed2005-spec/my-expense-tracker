@@ -5,41 +5,102 @@
 <title>Expense Tracker</title>
 
 <style>
+
 body{
-font-family:'Segoe UI',Arial;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+background:#f6f7fb;
+margin:0;
 padding:20px;
-max-width:500px;
-margin:auto;
-background:#fffbe6;
+display:flex;
+justify-content:center;
 }
-input,select,button{
-font-size:18px;
-padding:12px;
-margin:5px 0;
+
+.container{
 width:100%;
+max-width:500px;
+background:white;
+padding:25px;
+border-radius:14px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
+
+h2{
+text-align:center;
+margin-bottom:20px;
+font-weight:600;
+}
+
+input,select{
+width:100%;
+padding:14px;
+margin-bottom:12px;
+border-radius:8px;
+border:1px solid #ddd;
+font-size:16px;
+transition:0.2s;
+}
+
+input:focus,select:focus{
+outline:none;
+border-color:#4caf50;
+box-shadow:0 0 0 2px rgba(76,175,80,0.2);
+}
+
 button{
+width:100%;
+padding:14px;
 background:#4caf50;
 color:white;
 border:none;
+border-radius:8px;
+font-size:17px;
+font-weight:500;
+cursor:pointer;
+transition:0.2s;
 }
+
+button:hover{
+background:#43a047;
+}
+
+h3{
+margin-top:20px;
+font-weight:600;
+}
+
+ul{
+list-style:none;
+padding:0;
+margin-top:15px;
+}
+
 li{
+background:#fafafa;
+padding:14px;
+margin-bottom:10px;
+border-radius:10px;
 display:flex;
 justify-content:space-between;
-margin-bottom:5px;
-background:white;
-padding:10px;
+align-items:center;
+border:1px solid #eee;
 }
+
 .small-btn{
 width:auto;
-padding:6px 10px;
+padding:6px 12px;
 margin-left:6px;
+border-radius:6px;
+font-size:14px;
 }
+
 </style>
+
 
 </head>
 
 <body>
+<div class="container">
+
 
 <h2>Expense Tracker</h2>
 
@@ -174,6 +235,6 @@ document.getElementById("note").value="";
 
 </script>
 
+</div>
 </body>
 </html>
-
