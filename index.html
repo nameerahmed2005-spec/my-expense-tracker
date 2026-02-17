@@ -6,15 +6,15 @@
 
 <style>
 
-/* ===== ORIGINAL INSANE UI ===== */
+/* ===== INSANE UI RESTORED ===== */
 
 :root{
---bg:#0b0f17;
---card:#171c26;
+--bg:#0f1115;
+--card:#1a1d24;
 --text:#e6e6e6;
---input-bg:#0f1420;
---border:#242a36;
---item:#111827;
+--input-bg:#12151b;
+--border:#2c313c;
+--item:#151922;
 --primary:#22c55e;
 --neutral:#2c313c;
 }
@@ -48,20 +48,18 @@ border-radius:14px;
 position:relative;
 }
 
-/* ORIGINAL INPUT LOOK */
-
 input,select{
 width:100%;
 padding:14px;
 margin-bottom:12px;
-border-radius:14px;
+border-radius:10px;
 border:1px solid var(--border);
 background:var(--input-bg);
 color:var(--text);
 font-size:16px;
 }
 
-/* ⭐ ONLY WIDTH FIX */
+/* ONLY WIDTH FIX */
 #amount,#note{
 box-sizing:border-box;
 }
@@ -72,7 +70,7 @@ padding:14px;
 background:var(--primary);
 color:white;
 border:none;
-border-radius:14px;
+border-radius:10px;
 cursor:pointer;
 }
 
@@ -89,7 +87,7 @@ li{
 background:var(--item);
 padding:14px;
 margin-bottom:10px;
-border-radius:14px;
+border-radius:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
@@ -149,8 +147,6 @@ font-size:18px;
 
 <script>
 
-/* ===== FIREBASE ===== */
-
 const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
 authDomain:"expense-tracker-2796a.firebaseapp.com",
@@ -167,15 +163,34 @@ let expenses={};
 let editingID=null;
 let editingDate=null;
 
-/* ===== THEME ===== */
-
+const addBtn=document.getElementById("addBtn");
 const themeBtn=document.getElementById("themeToggle");
+const grandTotalEl=document.getElementById("grandTotal");
+
+/* THEME FIX */
+
+function applyTheme(){
+if(localStorage.getItem("theme")==="light"){
+document.body.classList.add("light");
+themeBtn.textContent="☀️";
+}else{
+document.body.classList.remove("light");
+themeBtn.textContent="🌙";
+}
+}
 
 themeBtn.onclick=()=>{
-document.body.classList.toggle("light");
+if(document.body.classList.contains("light")){
+localStorage.setItem("theme","dark");
+}else{
+localStorage.setItem("theme","light");
+}
+applyTheme();
 };
 
-/* ===== 7AM LOGICAL DATE ===== */
+applyTheme();
+
+/* 7AM LOGICAL DATE */
 
 function getLogicalDate(){
 const d=new Date();
@@ -183,7 +198,7 @@ d.setHours(d.getHours()-7);
 return d.toISOString().split("T")[0];
 }
 
-/* ===== REALTIME SYNC ===== */
+/* SYNC */
 
 expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
@@ -194,22 +209,22 @@ function renderExpenses(){
 
 expenseList.innerHTML="";
 
-let grandTotalValue=0;
+let grandTotal=0;
 let grouped={};
 
 Object.entries(expenses).forEach(([id,exp])=>{
 
-const date = exp.date || "No Date";
+const date=exp.date || "No Date";
 
 if(!grouped[date]) grouped[date]=[];
 
 grouped[date].push({id,...exp});
 
-grandTotalValue+=Number(exp.amount||0);
+grandTotal+=Number(exp.amount||0);
 
 });
 
-grandTotal.textContent="Grand Total Rs "+grandTotalValue;
+grandTotalEl.textContent="Grand Total Rs "+grandTotal;
 
 Object.entries(grouped).forEach(([day,entries])=>{
 
@@ -266,7 +281,7 @@ expenseList.appendChild(li);
 
 }
 
-/* ===== ADD / UPDATE ===== */
+/* ADD / UPDATE */
 
 addBtn.onclick=()=>{
 
