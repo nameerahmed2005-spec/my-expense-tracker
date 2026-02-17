@@ -195,6 +195,7 @@ const expensesRef=db.ref("expenses");
 
 let expenses={};
 let editingID=null;
+let editingDate=null; // ⭐ store original date safely
 
 const addBtn=document.getElementById("addBtn");
 
@@ -284,7 +285,10 @@ editBtn.onclick=()=>{
 document.getElementById("amount").value=exp.amount;
 document.getElementById("category").value=exp.category;
 document.getElementById("note").value=exp.note;
+
 editingID=exp.id;
+editingDate=exp.date; // ⭐ save original date
+
 addBtn.textContent="Update";
 };
 
@@ -313,7 +317,7 @@ list.appendChild(li);
 
 }
 
-/* ⭐ EDIT DOES NOT CHANGE DATE */
+/* ADD / UPDATE BUTTON */
 
 addBtn.onclick=function(){
 
@@ -325,16 +329,16 @@ if(!amountVal) return;
 
 if(editingID){
 
-const originalDate = expenses[editingID].date;
-
+// ⭐ UPDATE without changing date
 expensesRef.child(editingID).set({
 amount:amountVal,
 category:categoryVal,
 note:noteVal,
-date:originalDate
+date:editingDate
 });
 
 editingID=null;
+editingDate=null;
 addBtn.textContent="Add";
 
 }else{
@@ -345,6 +349,7 @@ category:categoryVal,
 note:noteVal,
 date:getLogicalDate()
 });
+
 }
 
 document.getElementById("amount").value="";
@@ -355,3 +360,4 @@ document.getElementById("note").value="";
 
 </body>
 </html>
+
