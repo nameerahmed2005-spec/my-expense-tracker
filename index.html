@@ -6,6 +6,8 @@
 
 <style>
 
+/* ===== ORIGINAL INSANE UI ===== */
+
 :root{
 --bg:#0b0f17;
 --card:#171c26;
@@ -46,11 +48,13 @@ border-radius:14px;
 position:relative;
 }
 
+/* ORIGINAL INPUT LOOK */
+
 input,select{
 width:100%;
 padding:14px;
 margin-bottom:12px;
-border-radius:10px;
+border-radius:14px;
 border:1px solid var(--border);
 background:var(--input-bg);
 color:var(--text);
@@ -68,7 +72,7 @@ padding:14px;
 background:var(--primary);
 color:white;
 border:none;
-border-radius:8px;
+border-radius:14px;
 cursor:pointer;
 }
 
@@ -77,7 +81,7 @@ padding:6px 12px;
 margin-left:6px;
 background:var(--neutral);
 border:none;
-border-radius:6px;
+border-radius:8px;
 cursor:pointer;
 }
 
@@ -85,7 +89,7 @@ li{
 background:var(--item);
 padding:14px;
 margin-bottom:10px;
-border-radius:10px;
+border-radius:14px;
 display:flex;
 justify-content:space-between;
 align-items:center;
@@ -105,9 +109,10 @@ right:15px;
 border:none;
 background:var(--neutral);
 border-radius:50%;
-width:36px;
-height:36px;
+width:40px;
+height:40px;
 cursor:pointer;
+font-size:18px;
 }
 
 </style>
@@ -144,6 +149,8 @@ cursor:pointer;
 
 <script>
 
+/* ===== FIREBASE ===== */
+
 const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
 authDomain:"expense-tracker-2796a.firebaseapp.com",
@@ -160,7 +167,7 @@ let expenses={};
 let editingID=null;
 let editingDate=null;
 
-/* THEME */
+/* ===== THEME ===== */
 
 const themeBtn=document.getElementById("themeToggle");
 
@@ -168,13 +175,15 @@ themeBtn.onclick=()=>{
 document.body.classList.toggle("light");
 };
 
-/* LOGICAL DATE */
+/* ===== 7AM LOGICAL DATE ===== */
 
 function getLogicalDate(){
 const d=new Date();
 d.setHours(d.getHours()-7);
 return d.toISOString().split("T")[0];
 }
+
+/* ===== REALTIME SYNC ===== */
 
 expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
@@ -185,7 +194,7 @@ function renderExpenses(){
 
 expenseList.innerHTML="";
 
-let grandTotal=0;
+let grandTotalValue=0;
 let grouped={};
 
 Object.entries(expenses).forEach(([id,exp])=>{
@@ -196,11 +205,11 @@ if(!grouped[date]) grouped[date]=[];
 
 grouped[date].push({id,...exp});
 
-grandTotal+=Number(exp.amount||0);
+grandTotalValue+=Number(exp.amount||0);
 
 });
 
-grandTotal.textContent="Grand Total Rs "+grandTotal;
+grandTotal.textContent="Grand Total Rs "+grandTotalValue;
 
 Object.entries(grouped).forEach(([day,entries])=>{
 
@@ -210,7 +219,6 @@ entries.forEach(e=>dayTotal+=Number(e.amount||0));
 const header=document.createElement("div");
 header.className="day-header";
 header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
-
 expenseList.appendChild(header);
 
 entries.forEach(exp=>{
@@ -258,14 +266,14 @@ expenseList.appendChild(li);
 
 }
 
-addBtn.onclick=function(){
+/* ===== ADD / UPDATE ===== */
 
-const amountVal=amount.value;
+addBtn.onclick=()=>{
 
-if(!amountVal) return;
+if(!amount.value) return;
 
 const data={
-amount:amountVal,
+amount:amount.value,
 category:category.value,
 note:note.value
 };
