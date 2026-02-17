@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expense Tracker</title>
 
@@ -13,33 +12,24 @@ max-width:500px;
 margin:auto;
 background:#fffbe6;
 }
-
 input,select,button{
 font-size:18px;
 padding:12px;
 margin:5px 0;
 width:100%;
-border-radius:5px;
-border:1px solid #ccc;
 }
-
 button{
 background:#4caf50;
 color:white;
 border:none;
 }
-
-ul{list-style:none;padding:0;margin-top:20px;}
-
 li{
 display:flex;
 justify-content:space-between;
-align-items:center;
-background:linear-gradient(to bottom,#fffbe6 50%,#e0e0e0 50%);
-padding:10px;
 margin-bottom:5px;
+background:white;
+padding:10px;
 }
-
 .small-btn{
 width:auto;
 padding:6px 10px;
@@ -54,13 +44,11 @@ margin-left:6px;
 <h2>Expense Tracker</h2>
 
 <input id="amount" type="number" placeholder="Amount">
-
 <select id="category">
 <option>Food</option>
 <option>Travel</option>
 <option>Misc</option>
 </select>
-
 <input id="note" placeholder="Optional Note">
 
 <button id="addBtn">Add</button>
@@ -69,17 +57,11 @@ margin-left:6px;
 
 <ul id="expenseList"></ul>
 
-<script type="module">
+<!-- FIREBASE NON-MODULE VERSION -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-getDatabase,
-ref,
-push,
-set,
-remove,
-onValue
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<script>
 
 const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
@@ -90,17 +72,17 @@ messagingSenderId:"246479741004",
 appId:"1:246479741004:web:f486279bd9395547e114e9"
 };
 
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+firebase.initializeApp(firebaseConfig);
 
-const expensesRef=ref(db,"expenses");
+const db=firebase.database();
+const expensesRef=db.ref("expenses");
 
 let expenses={};
 let editingID=null;
 
 const addBtn=document.getElementById("addBtn");
 
-onValue(expensesRef,(snapshot)=>{
+expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
 renderExpenses();
 });
@@ -117,7 +99,7 @@ const li=document.createElement("li");
 
 const text=document.createElement("span");
 text.textContent=
-`Rs ${exp.amount} - ${exp.category} ${exp.note ? '('+exp.note+')':''}`;
+`Rs ${exp.amount} - ${exp.category} ${exp.note? '('+exp.note+')':''}`;
 
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
@@ -137,7 +119,7 @@ deleteBtn.className="small-btn";
 
 deleteBtn.onclick=()=>{
 if(confirm("Delete this expense?")){
-remove(ref(db,"expenses/"+id));
+expensesRef.child(id).remove();
 }
 };
 
@@ -147,7 +129,6 @@ btns.appendChild(deleteBtn);
 
 li.appendChild(text);
 li.appendChild(btns);
-
 list.appendChild(li);
 
 total+=Number(exp.amount);
@@ -167,7 +148,7 @@ if(!amountVal) return;
 
 if(editingID){
 
-set(ref(db,"expenses/"+editingID),{
+expensesRef.child(editingID).set({
 amount:amountVal,
 category:categoryVal,
 note:noteVal
@@ -178,9 +159,7 @@ addBtn.textContent="Add";
 
 }else{
 
-const newRef=push(expensesRef);
-
-set(newRef,{
+expensesRef.push({
 amount:amountVal,
 category:categoryVal,
 note:noteVal
