@@ -63,6 +63,8 @@ position:relative;
 input,select{
 
 width:100%;
+box-sizing:border-box;   /* ⭐ THIS FIXES OVERFLOW */
+
 padding:14px;
 margin-bottom:12px;
 border-radius:12px;
@@ -72,6 +74,7 @@ color:var(--text);
 
 font-size:16px;
 }
+
 
 /* Dropdown style (NOT amount/note) */
 select{
@@ -109,7 +112,7 @@ border-radius:14px;
 
 display:flex;
 justify-content:space-between;
-align-items:center;
+align-items:flex-start;
 
 border:1px solid #141a26;
 
@@ -190,19 +193,20 @@ body.light .theme-toggle{
 background:#f1f5f9;
 }
 
-/* LEFT ALIGN */
-.day-header{
-text-align:left;
-margin-left:2px;
-}
-
-li{
-text-align:left;
-}
-
 /* WHITE BUTTON TEXT */
 .small-btn{
 color:white;
+}
+
+.day-header{
+text-align:left;
+width:100%;
+margin:10px 0 6px 0;
+}
+
+li span{
+text-align:left;
+display:block;
 }
 
 </style>
@@ -416,3 +420,4 @@ note.value="";
 
 </body>
 </html>
+
