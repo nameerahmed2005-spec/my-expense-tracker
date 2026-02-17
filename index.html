@@ -57,7 +57,7 @@ color:var(--text);
 font-size:16px;
 }
 
-/* ⭐ ONLY FIX */
+/* ⭐ ONLY WIDTH FIX */
 #amount,#note{
 box-sizing:border-box;
 }
@@ -122,6 +122,7 @@ cursor:pointer;
 <h2>Expense Tracker</h2>
 
 <input id="amount" type="number" placeholder="Amount">
+
 <select id="category">
 <option>Food</option>
 <option>Travel</option>
@@ -163,23 +164,9 @@ let editingDate=null;
 
 const themeBtn=document.getElementById("themeToggle");
 
-function applyTheme(){
-if(localStorage.getItem("theme")==="light"){
-document.body.classList.add("light");
-themeBtn.textContent="🌙";
-}else{
-themeBtn.textContent="☀️";
-}
-}
-
 themeBtn.onclick=()=>{
 document.body.classList.toggle("light");
-const light=document.body.classList.contains("light");
-localStorage.setItem("theme",light?"light":"dark");
-applyTheme();
 };
-
-applyTheme();
 
 /* LOGICAL DATE */
 
@@ -188,8 +175,6 @@ const d=new Date();
 d.setHours(d.getHours()-7);
 return d.toISOString().split("T")[0];
 }
-
-/* SYNC */
 
 expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
@@ -215,7 +200,7 @@ grandTotal+=Number(exp.amount||0);
 
 });
 
-grandTotalEl.textContent="Grand Total Rs "+grandTotal;
+grandTotal.textContent="Grand Total Rs "+grandTotal;
 
 Object.entries(grouped).forEach(([day,entries])=>{
 
@@ -225,13 +210,15 @@ entries.forEach(e=>dayTotal+=Number(e.amount||0));
 const header=document.createElement("div");
 header.className="day-header";
 header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
+
 expenseList.appendChild(header);
 
 entries.forEach(exp=>{
 
 const li=document.createElement("li");
 
-li.innerHTML=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
+const text=document.createElement("span");
+text.textContent=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
 
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
@@ -260,6 +247,7 @@ const btns=document.createElement("div");
 btns.appendChild(editBtn);
 btns.appendChild(deleteBtn);
 
+li.appendChild(text);
 li.appendChild(btns);
 
 expenseList.appendChild(li);
@@ -270,9 +258,7 @@ expenseList.appendChild(li);
 
 }
 
-/* ADD / UPDATE */
-
-addBtn.onclick=()=>{
+addBtn.onclick=function(){
 
 const amountVal=amount.value;
 
