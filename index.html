@@ -101,6 +101,8 @@ margin-bottom:10px;
 
 <script>
 
+window.onload = function(){
+
 const firebaseConfig={
 apiKey:"AIzaSyCCupf8EtI4Lk3bpNFgLs2B_-NsozHQS1g",
 authDomain:"expense-tracker-2796a.firebaseapp.com",
@@ -121,14 +123,12 @@ let editingID=null;
 
 const addBtn=document.getElementById("addBtn");
 
-/* ⭐ 7AM LOGICAL DAY */
 function getLogicalDate(){
 const d=new Date();
 d.setHours(d.getHours()-7);
 return d.toISOString().split("T")[0];
 }
 
-/* REALTIME SYNC */
 expensesRef.on("value",(snapshot)=>{
 expenses=snapshot.val()||{};
 renderExpenses();
@@ -144,13 +144,13 @@ let grouped={};
 
 Object.entries(expenses).forEach(([id,exp])=>{
 
-const date=exp.date || "No Date";
+const date = exp.date || "No Date";
 
 if(!grouped[date]) grouped[date]=[];
 
 grouped[date].push({id,...exp});
 
-grandTotal+=Number(exp.amount);
+grandTotal += Number(exp.amount || 0);
 
 });
 
@@ -160,7 +160,7 @@ document.getElementById("grandTotal").textContent =
 Object.entries(grouped).sort().reverse().forEach(([day,entries])=>{
 
 let dayTotal=0;
-entries.forEach(e=> dayTotal+=Number(e.amount));
+entries.forEach(e=> dayTotal += Number(e.amount || 0));
 
 const header=document.createElement("div");
 header.className="day-header";
@@ -174,7 +174,7 @@ const li=document.createElement("li");
 
 const text=document.createElement("span");
 text.textContent=
-`Rs ${exp.amount} - ${exp.category} ${exp.note? '('+exp.note+')':''}`;
+`Rs ${exp.amount} - ${exp.category || ''} ${exp.note ? '('+exp.note+')':''}`;
 
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
@@ -213,7 +213,7 @@ list.appendChild(li);
 
 }
 
-addBtn.onclick=()=>{
+addBtn.onclick = function(){
 
 const amountVal=document.getElementById("amount").value;
 const categoryVal=document.getElementById("category").value;
@@ -247,6 +247,8 @@ date:logicalDate
 
 document.getElementById("amount").value="";
 document.getElementById("note").value="";
+};
+
 };
 
 </script>
