@@ -271,6 +271,10 @@ will-change:transform;
 transition:transform 0.12s ease;
 }
 
+li{
+    touch-action:none;
+}
+
 </style>
 
 </head>
@@ -322,6 +326,7 @@ let expenses={};
 let editingID=null;
 let editingDate=null;
 let ghost = null;
+let touchDraggingID = null;
 
 /* MOBILE DETECTION */
 const isTouchDevice = 'ontouchstart' in window;
@@ -436,6 +441,7 @@ Object.entries(grouped).forEach(([day,entries])=>{
 /* ===== FULL DAY CONTAINER (PRO DROP ZONE) ===== */
 
 const dayContainer=document.createElement("div");
+dayContainer.dataset.day = day;
 
 dayContainer.addEventListener("dragenter",(e)=>{
     e.preventDefault();   // allow drop
@@ -498,6 +504,32 @@ entries.forEach(exp=>{
 const li=document.createElement("li");
 
 li.draggable=true;
+
+/* ===== MOBILE TOUCH DRAG ===== */
+
+li.addEventListener("touchstart",(e)=>{
+
+    if(!isTouchDevice) return;
+
+    const touch = e.touches[0];
+
+    touchDraggingID = exp.id;
+
+    li.classList.add("dragging");
+
+    if(ghost){
+        ghost.remove();
+        ghost=null;
+    }
+
+    ghost = li.cloneNode(true);
+    ghost.classList.add("drag-ghost");
+
+    ghost.style.left = (touch.clientX + 10) + "px";
+    ghost.style.top  = (touch.clientY + 10) + "px";
+
+    document.body.appendChild(ghost);
+});
 
 li.addEventListener("dragstart",(e)=>{
 
@@ -615,53 +647,86 @@ note.value="";
 
 /* AUTO SCROLL WHILE DRAGGING */
 
-document.addEventListener("pointermove",(e)=>{
+document.addEventListener("touchmove",(e)=>{
 
-/* AUTO SCROLL */
+    if(!touchDraggingID || !ghost) return;
 
-const margin=60;
+    e.preventDefault();
 
-if(e.clientY < margin){
-    window.scrollBy(0,-10);
-}else if(window.innerHeight - e.clientY < margin){
-    window.scrollBy(0,10);
-}
+    const touch = e.touches[0];
 
-/* GHOST FOLLOW */
+    /* AUTO SCROLL (mobile native feel) */
 
-if(ghost){
-    ghost.style.left = (e.clientX + 10) + "px";
-    ghost.style.top  = (e.clientY + 10) + "px";
-}
+    const margin = 80;
 
-});
+    if(touch.clientY < margin){
+        window.scrollBy(0,-8);
+    }
+    else if(window.innerHeight - touch.clientY < margin){
+        window.scrollBy(0,8);
+    }
+
+    ghost.style.left = (touch.clientX + 10) + "px";
+    ghost.style.top  = (touch.clientY + 10) + "px";
+
+    /* LIVE HIGHLIGHT TARGET */
+
+    document.querySelectorAll("[data-day]").forEach(el=>{
+        el.classList.remove("drop-target");
+    });
+
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const target = el?.closest("[data-day]");
+
+    if(target){
+        target.classList.add("drop-target");
+    }
+
+},{ passive:false });
 
 /* MOBILE SAFETY CLEANUP */
 
-document.addEventListener("touchend",()=>{
+document.addEventListener("touchend",(e)=>{
 
-const dragging = document.querySelector(".dragging");
+    if(!touchDraggingID) return;
 
-if(dragging){
-    dragging.classList.remove("dragging");
-}
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
 
-if(ghost){
-    ghost.remove();
-    ghost=null;
-}
+    const dayContainer = el?.closest("[data-day]");
+
+    if(dayContainer){
+
+        const day = dayContainer.dataset.day;
+        const item = expenses[touchDraggingID];
+
+        if(item){
+            item.date = day;
+            expensesRef.child(touchDraggingID).set(item);
+        }
+    }
+
+    /* cleanup */
+
+    const dragging = document.querySelector(".dragging");
+
+    if(dragging){
+        dragging.classList.remove("dragging");
+    }
+
+    if(ghost){
+        ghost.remove();
+        ghost=null;
+    }
+
+    touchDraggingID = null;
 
 });
+
+
 
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
 
