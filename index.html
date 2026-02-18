@@ -355,9 +355,15 @@ applyTheme();
 /* 7AM LOGICAL DATE */
 
 function getLogicalDate(){
-const d=new Date();
-d.setHours(d.getHours()-7);
+
+const d = new Date();
+
+/* simulate different days for testing */
+
+d.setDate(d.getDate() - 1); // yesterday
+
 return d.toISOString().split("T")[0];
+
 }
 
 /* SYNC */
@@ -629,6 +635,7 @@ if(ghost){
 
 </body>
 </html>
+
 
 
 
