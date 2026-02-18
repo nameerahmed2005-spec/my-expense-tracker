@@ -215,6 +215,62 @@ padding-left:0;
 margin:0;
 }
 
+.day-header{
+cursor:pointer;
+}
+
+/* ===== PRO DRAG FEEDBACK ===== */
+
+.dragging{
+opacity:0.5;
+}
+
+.drop-success{
+animation:dropFlash 0.4s ease;
+}
+
+@keyframes dropFlash{
+0%{ box-shadow:0 0 0px transparent;}
+50%{ box-shadow:0 0 15px var(--primary);}
+100%{ box-shadow:0 0 0px transparent;}
+}
+
+li{
+transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+li:hover{
+transform:translateY(-2px);
+}
+
+/* ===== GHOST DRAG PREVIEW ===== */
+
+.drag-ghost{
+position:fixed;
+pointer-events:none;
+z-index:9999;
+
+background:linear-gradient(145deg,#0f1420,#0c1019);
+border:1px solid #141a26;
+border-radius:14px;
+
+padding:14px;
+
+opacity:0.85;
+transform:scale(0.95);
+
+box-shadow:0 10px 30px rgba(0,0,0,0.7);
+}
+
+.drop-target{
+outline:2px solid var(--primary);
+border-radius:10px;
+transform:scale(1.01);
+transform-origin:center;
+will-change:transform;
+transition:transform 0.12s ease;
+}
+
 </style>
 
 </head>
@@ -265,14 +321,13 @@ const expensesRef=db.ref("expenses");
 let expenses={};
 let editingID=null;
 let editingDate=null;
+let ghost = null;
 
 const addBtn=document.getElementById("addBtn");
 const themeBtn=document.getElementById("themeToggle");
 const grandTotalEl=document.getElementById("grandTotal");
 
-/* THEME FIX */
-
-/* ===== LIGHT MODE ===== */
+/* THEME */
 
 function applyTheme(){
 if(localStorage.getItem("theme")==="light"){
@@ -285,11 +340,10 @@ themeBtn.textContent="☀️";
 }
 
 themeBtn.onclick=()=>{
-if(document.body.classList.contains("light")){
-localStorage.setItem("theme","dark");
-}else{
-localStorage.setItem("theme","light");
-}
+localStorage.setItem(
+"theme",
+document.body.classList.contains("light") ? "dark":"light"
+);
 applyTheme();
 };
 
@@ -315,17 +369,40 @@ renderExpenses();
 
 function formatDate(dateStr){
 
-    if(dateStr === "No Date") return "No Date";
+if(dateStr==="No Date") return "No Date";
 
-    const date = new Date(dateStr);
+const date=new Date(dateStr);
 
-    const options = {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-    };
+return date.toLocaleDateString("en-GB",{
+day:"numeric",
+month:"short",
+year:"numeric"
+});
+}
 
-    return date.toLocaleDateString("en-GB", options);
+function generateFullDateRange(grouped){
+
+const dates=Object.keys(grouped)
+.filter(d=>d!=="No Date")
+.sort();
+
+if(dates.length===0) return grouped;
+
+const start=new Date(dates[0]);
+const end=new Date(dates[dates.length-1]);
+
+let current=new Date(start);
+
+while(current<=end){
+
+const key=current.toISOString().split("T")[0];
+
+if(!grouped[key]) grouped[key]=[];
+
+current.setDate(current.getDate()+1);
+}
+
+return grouped;
 }
 
 function renderExpenses(){
@@ -337,7 +414,7 @@ let grouped={};
 
 Object.entries(expenses).forEach(([id,exp])=>{
 
-const date=exp.date || "No Date";
+const date=exp.date||"No Date";
 
 if(!grouped[date]) grouped[date]=[];
 
@@ -347,9 +424,54 @@ grandTotal+=Number(exp.amount||0);
 
 });
 
+grouped=generateFullDateRange(grouped);
+
 grandTotalEl.textContent="Grand Total Rs "+grandTotal;
 
 Object.entries(grouped).forEach(([day,entries])=>{
+
+/* ===== FULL DAY CONTAINER (PRO DROP ZONE) ===== */
+
+const dayContainer=document.createElement("div");
+
+dayContainer.addEventListener("dragenter",(e)=>{
+    if(e.dataTransfer.types.includes("text/plain")){
+        dayContainer.classList.add("drop-target");
+    }
+});
+
+dayContainer.addEventListener("dragover",(e)=>{
+    e.preventDefault();
+});
+
+dayContainer.addEventListener("dragleave",()=>{
+    dayContainer.classList.remove("drop-target");
+});
+
+dayContainer.addEventListener("drop",(e)=>{
+
+e.preventDefault();
+
+const draggedID=e.dataTransfer.getData("text/plain");
+
+const item=expenses[draggedID];
+
+if(!item) return;
+
+item.date=day;
+
+expensesRef.child(draggedID).set(item);
+
+dayContainer.classList.remove("drop-target");
+dayContainer.classList.add("drop-success");
+
+setTimeout(()=>{
+dayContainer.classList.remove("drop-success");
+},400);
+
+});
+
+/* HEADER */
 
 let dayTotal=0;
 entries.forEach(e=>dayTotal+=Number(e.amount||0));
@@ -357,11 +479,48 @@ entries.forEach(e=>dayTotal+=Number(e.amount||0));
 const header=document.createElement("div");
 header.className="day-header";
 header.textContent=`${formatDate(day)} — Daily Total Rs ${dayTotal}`;
-expenseList.appendChild(header);
+
+dayContainer.appendChild(header);
+
+/* ENTRIES */
 
 entries.forEach(exp=>{
 
 const li=document.createElement("li");
+
+li.draggable=true;
+
+li.addEventListener("dragstart",(e)=>{
+
+if(ghost){
+ghost.remove();
+ghost=null;
+}
+
+li.classList.add("dragging");
+
+e.dataTransfer.setData("text/plain",exp.id);
+
+/* CREATE GHOST */
+ghost = li.cloneNode(true);
+ghost.classList.add("drag-ghost");
+document.body.appendChild(ghost);
+
+/* hide default preview */
+e.dataTransfer.setDragImage(new Image(),0,0);
+
+});
+
+li.addEventListener("dragend",()=>{
+
+li.classList.remove("dragging");
+
+if(ghost){
+ghost.remove();
+ghost=null;
+}
+
+});
 
 const text=document.createElement("span");
 text.textContent=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
@@ -369,6 +528,14 @@ text.textContent=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
 editBtn.className="small-btn";
+
+const deleteBtn=document.createElement("button");
+deleteBtn.textContent="Delete";
+deleteBtn.className="small-btn";
+
+/* prevent drag when clicking buttons */
+editBtn.addEventListener("mousedown",e=>e.stopPropagation());
+deleteBtn.addEventListener("mousedown",e=>e.stopPropagation());
 
 editBtn.onclick=()=>{
 amount.value=exp.amount;
@@ -378,10 +545,6 @@ editingID=exp.id;
 editingDate=exp.date;
 addBtn.textContent="Update";
 };
-
-const deleteBtn=document.createElement("button");
-deleteBtn.textContent="Delete";
-deleteBtn.className="small-btn";
 
 deleteBtn.onclick=()=>{
 if(confirm("Delete this expense?")){
@@ -396,9 +559,11 @@ btns.appendChild(deleteBtn);
 li.appendChild(text);
 li.appendChild(btns);
 
-expenseList.appendChild(li);
+dayContainer.appendChild(li);
 
 });
+
+expenseList.appendChild(dayContainer);
 
 });
 
@@ -437,10 +602,34 @@ amount.value="";
 note.value="";
 };
 
+/* AUTO SCROLL WHILE DRAGGING */
+
+document.addEventListener("dragover",(e)=>{
+
+/* AUTO SCROLL */
+
+const margin=60;
+
+if(e.clientY < margin){
+    window.scrollBy(0,-10);
+}else if(window.innerHeight - e.clientY < margin){
+    window.scrollBy(0,10);
+}
+
+/* GHOST FOLLOW */
+
+if(ghost){
+    ghost.style.left = (e.clientX + 10) + "px";
+    ghost.style.top  = (e.clientY + 10) + "px";
+}
+
+});
+
 </script>
 
 </body>
 </html>
+
 
 
 
