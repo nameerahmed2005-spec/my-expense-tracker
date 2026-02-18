@@ -313,6 +313,21 @@ expenses=snapshot.val()||{};
 renderExpenses();
 });
 
+function formatDate(dateStr){
+
+    if(dateStr === "No Date") return "No Date";
+
+    const date = new Date(dateStr);
+
+    const options = {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    };
+
+    return date.toLocaleDateString("en-GB", options);
+}
+
 function renderExpenses(){
 
 expenseList.innerHTML="";
@@ -341,7 +356,7 @@ entries.forEach(e=>dayTotal+=Number(e.amount||0));
 
 const header=document.createElement("div");
 header.className="day-header";
-header.textContent=`${day} — Daily Total Rs ${dayTotal}`;
+header.textContent=`${formatDate(day)} — Daily Total Rs ${dayTotal}`;
 expenseList.appendChild(header);
 
 entries.forEach(exp=>{
@@ -426,5 +441,6 @@ note.value="";
 
 </body>
 </html>
+
 
 
