@@ -390,27 +390,22 @@ year:"numeric"
 
 function generateFullDateRange(grouped){
 
-const dates=Object.keys(grouped)
-.filter(d=>d!=="No Date")
-.sort();
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), 1); // first day of month
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // today
 
-if(dates.length===0) return grouped;
+    let current = new Date(start);
 
-const start=new Date(dates[0]);
-const end=new Date(dates[dates.length-1]);
+    while(current <= end){
 
-let current=new Date(start);
+        const key = current.toISOString().split("T")[0];
 
-while(current<=end){
+        if(!grouped[key]) grouped[key] = [];
 
-const key=current.toISOString().split("T")[0];
+        current.setDate(current.getDate()+1);
+    }
 
-if(!grouped[key]) grouped[key]=[];
-
-current.setDate(current.getDate()+1);
-}
-
-return grouped;
+    return grouped;
 }
 
 function renderExpenses(){
@@ -738,5 +733,6 @@ document.addEventListener("touchend",(e)=>{
 
 </body>
 </html>
+
 
 
