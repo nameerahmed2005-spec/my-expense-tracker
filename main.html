@@ -436,7 +436,16 @@ grouped=generateFullDateRange(grouped);
 
 grandTotalEl.textContent="Grand Total Rs "+grandTotal;
 
-Object.entries(grouped).forEach(([day,entries])=>{
+Object.entries(grouped)
+.sort((a,b)=>{
+
+    if(a[0]==="No Date") return 1;
+    if(b[0]==="No Date") return -1;
+
+    return new Date(b[0]) - new Date(a[0]); // newest first
+
+})
+.forEach(([day,entries])=>{
 
 /* ===== FULL DAY CONTAINER (PRO DROP ZONE) ===== */
 
@@ -729,4 +738,5 @@ document.addEventListener("touchend",(e)=>{
 
 </body>
 </html>
+
 
