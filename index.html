@@ -323,6 +323,9 @@ let editingID=null;
 let editingDate=null;
 let ghost = null;
 
+/* MOBILE DETECTION */
+const isTouchDevice = 'ontouchstart' in window;
+
 const addBtn=document.getElementById("addBtn");
 const themeBtn=document.getElementById("themeToggle");
 const grandTotalEl=document.getElementById("grandTotal");
@@ -360,7 +363,7 @@ const d = new Date();
 
 /* simulate different days for testing */
 
-d.setDate(d.getDate() - 1); // yesterday
+d.setDate(d.getDate() - 2); // yesterday
 
 return d.toISOString().split("T")[0];
 
@@ -441,17 +444,23 @@ Object.entries(grouped).forEach(([day,entries])=>{
 const dayContainer=document.createElement("div");
 
 dayContainer.addEventListener("dragenter",(e)=>{
-    if(e.dataTransfer.types.includes("text/plain")){
-        dayContainer.classList.add("drop-target");
-    }
+    e.preventDefault();   // allow drop
+    dayContainer.classList.add("drop-target");
 });
 
 dayContainer.addEventListener("dragover",(e)=>{
     e.preventDefault();
 });
 
-dayContainer.addEventListener("dragleave",()=>{
-    dayContainer.classList.remove("drop-target");
+dayContainer.addEventListener("dragleave",(e)=>{
+
+    // Only remove highlight if actually leaving container,
+    // not just entering a child element
+
+    if(!dayContainer.contains(e.relatedTarget)){
+        dayContainer.classList.remove("drop-target");
+    }
+
 });
 
 dayContainer.addEventListener("drop",(e)=>{
@@ -513,7 +522,9 @@ ghost.classList.add("drag-ghost");
 document.body.appendChild(ghost);
 
 /* hide default preview */
-e.dataTransfer.setDragImage(new Image(),0,0);
+if(!isTouchDevice){
+   e.dataTransfer.setDragImage(new Image(),0,0);
+}
 
 });
 
@@ -610,7 +621,7 @@ note.value="";
 
 /* AUTO SCROLL WHILE DRAGGING */
 
-document.addEventListener("dragover",(e)=>{
+document.addEventListener("pointermove",(e)=>{
 
 /* AUTO SCROLL */
 
@@ -631,10 +642,28 @@ if(ghost){
 
 });
 
+/* MOBILE SAFETY CLEANUP */
+
+document.addEventListener("touchend",()=>{
+
+const dragging = document.querySelector(".dragging");
+
+if(dragging){
+    dragging.classList.remove("dragging");
+}
+
+if(ghost){
+    ghost.remove();
+    ghost=null;
+}
+
+});
+
 </script>
 
 </body>
 </html>
+
 
 
 
