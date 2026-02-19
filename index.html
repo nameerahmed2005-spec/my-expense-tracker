@@ -363,9 +363,14 @@ applyTheme();
 /* 7AM LOGICAL DATE */
 
 function getLogicalDate(){
-const d=new Date();
-d.setHours(d.getHours()-7);
-return d.toISOString().split("T")[0];
+
+    const now = new Date();
+
+    const local = new Date(
+        now.getTime() - now.getTimezoneOffset() * 60000
+    );
+
+    return local.toISOString().split("T")[0];
 }
 
 /* SYNC */
@@ -377,28 +382,37 @@ renderExpenses();
 
 function formatDate(dateStr){
 
-if(dateStr==="No Date") return "No Date";
+    if(dateStr==="No Date") return "No Date";
 
-const date=new Date(dateStr);
+    const date = new Date(dateStr);
 
-return date.toLocaleDateString("en-GB",{
-day:"numeric",
-month:"short",
-year:"numeric"
-});
+    const day = String(date.getDate()).padStart(2,"0");
+
+    const months = [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+    ];
+
+    const monthName = months[date.getMonth()];
+
+    const year = date.getFullYear();
+
+    return `${day}-${monthName}-${year}`;
 }
 
 function generateFullDateRange(grouped){
 
     const today = new Date();
+    today.setHours(0,0,0,0);
     const start = new Date(today.getFullYear(), today.getMonth(), 1); // first day of month
     const end = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // today
 
     let current = new Date(start);
+    current.setHours(0,0,0,0);
 
     while(current <= end){
 
-        const key = current.toISOString().split("T")[0];
+        const key = new Date(current.getTime() - current.getTimezoneOffset() * 60000).toISOString().split("T")[0];
 
         if(!grouped[key]) grouped[key] = [];
 
@@ -733,6 +747,3 @@ document.addEventListener("touchend",(e)=>{
 
 </body>
 </html>
-
-
-
