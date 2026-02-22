@@ -418,15 +418,7 @@ const auth = firebase.auth();
 // VERY IMPORTANT for mobile redirect login
 firebase.auth().useDeviceLanguage();
 
-auth.getRedirectResult()
-.then((result) => {
-    if (result.user) {
-        console.log("Redirect login successful");
-    }
-})
-.catch((error) => {
-    console.error("Redirect login error:", error);
-});
+
 
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 .then(() => {
@@ -476,22 +468,37 @@ logoutBtn.onclick = () => {
     auth.signOut();
 };
 
+// Replace your entire auth startup logic with this:
+
+// TRUE until getRedirectResult resolves AND we know final auth state
+let redirectPending = true;
+
+auth.getRedirectResult()
+.then((result) => {
+    if (result.user) {
+        console.log("Redirect login successful:", result.user.displayName);
+    }
+    // Only clear pending AFTER a small buffer
+    // giving onAuthStateChanged time to fire with the real user
+    setTimeout(() => { redirectPending = false; }, 500);
+})
+.catch((error) => {
+    console.error("Redirect login error:", error);
+    setTimeout(() => { redirectPending = false; }, 500);
+});
+
 auth.onAuthStateChanged((user) => {
 
     if (user) {
-
-        // Hide loading, show app immediately
+        // Logged in — show app immediately, no matter what
         loadingScreen.style.display = "none";
         loginOverlay.style.display = "none";
         appContainer.style.display = "block";
-
-        logoutBtn.style.display = "block";
         userAvatar.style.display = "block";
 
         userAvatar.src = user.photoURL
             ? user.photoURL
-            : "https://ui-avatars.com/api/?name=" +
-              encodeURIComponent(user.displayName || "User");
+            : "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || "User");
 
         userName.textContent = user.displayName || "User";
 
@@ -511,17 +518,19 @@ auth.onAuthStateChanged((user) => {
 
     } else {
 
-        // Small delay before showing login — avoids flash during redirect auth
-        setTimeout(() => {
-            loadingScreen.style.display = "none";
-            appContainer.style.display = "none";
-            userAvatar.style.display = "none";
-            userMenu.style.display = "none";
-            loginOverlay.style.display = "flex";
-            expenses = {};
-            renderExpenses();
-        }, 1500);
+        // No user — but only show login if we're NOT mid-redirect
+        if (redirectPending) {
+            // Still processing redirect, keep showing loading screen
+            return;
+        }
 
+        loadingScreen.style.display = "none";
+        loginOverlay.style.display = "flex";
+        appContainer.style.display = "none";
+        userAvatar.style.display = "none";
+        userMenu.style.display = "none";
+        expenses = {};
+        renderExpenses();
     }
 
 });
@@ -967,6 +976,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
