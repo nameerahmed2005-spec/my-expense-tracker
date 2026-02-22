@@ -438,6 +438,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
 let expensesRef = null;
 let expensesListener = null;
+let authInitialized = false;
 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -475,39 +476,40 @@ logoutBtn.onclick = () => {
 };
 
 auth.onAuthStateChanged((user) => {
-    // Hide both screens first (prevents flash)
-    loginOverlay.style.display = "none";
-    appContainer.style.display = "none";
-    
-    if (loadingScreen.style.display !== "none") {
+
+    // Wait until Firebase finishes checking auth
+    if (!authInitialized) {
+        authInitialized = true;
+
         loadingScreen.style.opacity = "0";
         setTimeout(() => {
             loadingScreen.style.display = "none";
         }, 300);
     }
 
-    if(user){
+    if (user) {
+
+        loginOverlay.style.display = "none";
+        appContainer.style.display = "block";
+
         logoutBtn.style.display = "block";
         userAvatar.style.display = "block";
 
         if (user.photoURL) {
             userAvatar.src = user.photoURL;
         } else {
-            userAvatar.src = "https://ui-avatars.com/api/?name=" + 
-            encodeURIComponent(user.displayName || "User");
+            userAvatar.src =
+              "https://ui-avatars.com/api/?name=" +
+              encodeURIComponent(user.displayName || "User");
         }
 
         userName.textContent = user.displayName || "User";
-
-        loginOverlay.style.display = "none";
-
-        appContainer.style.display="block";
 
         const uid = user.uid;
 
         expensesRef = db.ref("expenses/" + uid);
 
-        if(expensesListener){
+        if (expensesListener) {
             expensesRef.off("value", expensesListener);
         }
 
@@ -519,17 +521,19 @@ auth.onAuthStateChanged((user) => {
         expensesRef.on("value", expensesListener);
 
     } else {
-        userAvatar.style.display="none";
-        userMenu.style.display="none";
-        loginOverlay.style.opacity="1";
-        loginOverlay.style.display="flex";
-        appContainer.style.display="none";
+
+        appContainer.style.display = "none";
+        loginOverlay.style.display = "flex";
+
+        userAvatar.style.display = "none";
+        userMenu.style.display = "none";
 
         expenses = {};
         renderExpenses();
     }
 
 });
+    
 let expenses={};
 let editingID=null;
 let editingDate=null;
@@ -971,6 +975,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
