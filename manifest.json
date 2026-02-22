@@ -2,7 +2,7 @@
   "name": "Expense Tracker",
   "short_name": "Expenses",
   "start_url": "/my-expense-tracker/",
-  "scope": "/my-expense-tracker/"
+  "scope": "/my-expense-tracker/",
   "display": "standalone",
   "background_color": "#05070d",
   "theme_color": "#05070d",
@@ -20,3 +20,4 @@
   ]
 
 }
+
