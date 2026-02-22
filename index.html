@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#05070d">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expense Tracker</title>
 
@@ -993,11 +995,18 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 }
 
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log("Service Worker Registered"))
+    .catch(err => console.log("SW Error", err));
+}
     
 </script>
 
 </body>
 </html>
+
 
 
 
