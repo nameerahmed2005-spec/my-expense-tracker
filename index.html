@@ -415,7 +415,22 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-auth.getRedirectResult().catch((error) => {
+// VERY IMPORTANT for mobile redirect login
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+.then(() => {
+    console.log("Auth persistence enabled");
+})
+.catch((error) => {
+    console.error("Persistence error:", error);
+});
+
+auth.getRedirectResult()
+.then((result) => {
+    if (result.user) {
+        console.log("Redirect login success");
+    }
+})
+.catch((error) => {
     console.error("Redirect login error:", error);
 });
 
@@ -439,20 +454,11 @@ prompt: "select_account"
     
 function startLogin(){
 
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-
-        // mobile-safe login
-        auth.signInWithRedirect(provider);
-
-    } else {
-
-        auth.signInWithPopup(provider)
-        .catch(err => {
-            console.error(err);
-            alert("Login failed. Please allow popups and try again.");
-        });
-
-    }
+    auth.signInWithRedirect(provider)
+    .catch(err => {
+        console.error("Login error:", err);
+        alert("Login failed. Please try again.");
+    });
 
 }
 
@@ -959,6 +965,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
