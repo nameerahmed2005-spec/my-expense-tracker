@@ -438,7 +438,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
 let expensesRef = null;
 let expensesListener = null;
-let authInitialized = false;
+let authResolved = false;
 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -477,14 +477,13 @@ logoutBtn.onclick = () => {
 
 auth.onAuthStateChanged((user) => {
 
-    // Wait until Firebase finishes checking auth
-    if (!authInitialized) {
-        authInitialized = true;
+    // FIRST TIME ONLY — auth fully resolved
+    if (!authResolved) {
 
-        loadingScreen.style.opacity = "0";
-        setTimeout(() => {
-            loadingScreen.style.display = "none";
-        }, 300);
+        authResolved = true;
+
+        // hide loading ONLY AFTER auth known
+        loadingScreen.style.display = "none";
     }
 
     if (user) {
@@ -495,13 +494,10 @@ auth.onAuthStateChanged((user) => {
         logoutBtn.style.display = "block";
         userAvatar.style.display = "block";
 
-        if (user.photoURL) {
-            userAvatar.src = user.photoURL;
-        } else {
-            userAvatar.src =
-              "https://ui-avatars.com/api/?name=" +
+        userAvatar.src = user.photoURL
+            ? user.photoURL
+            : "https://ui-avatars.com/api/?name=" +
               encodeURIComponent(user.displayName || "User");
-        }
 
         userName.textContent = user.displayName || "User";
 
@@ -975,6 +971,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
