@@ -477,18 +477,11 @@ logoutBtn.onclick = () => {
 };
 
 auth.onAuthStateChanged((user) => {
-    authChecked = true;
-    // FIRST TIME ONLY — auth fully resolved
-    if (!authResolved) {
-
-        authResolved = true;
-
-        // hide loading ONLY AFTER auth known
-        loadingScreen.style.display = "none";
-    }
 
     if (user) {
 
+        // Hide loading, show app immediately
+        loadingScreen.style.display = "none";
         loginOverlay.style.display = "none";
         appContainer.style.display = "block";
 
@@ -503,7 +496,6 @@ auth.onAuthStateChanged((user) => {
         userName.textContent = user.displayName || "User";
 
         const uid = user.uid;
-
         expensesRef = db.ref("expenses/" + uid);
 
         if (expensesListener) {
@@ -518,18 +510,18 @@ auth.onAuthStateChanged((user) => {
         expensesRef.on("value", expensesListener);
 
     } else {
-        appContainer.style.display = "none";
 
-        // DO NOT show login until auth fully checked
-        if (authChecked) {
-                loginOverlay.style.display = "flex";
-        }
-        
-        userAvatar.style.display = "none";
-        userMenu.style.display = "none";
+        // Small delay before showing login — avoids flash during redirect auth
+        setTimeout(() => {
+            loadingScreen.style.display = "none";
+            appContainer.style.display = "none";
+            userAvatar.style.display = "none";
+            userMenu.style.display = "none";
+            loginOverlay.style.display = "flex";
+            expenses = {};
+            renderExpenses();
+        }, 1500);
 
-        expenses = {};
-        renderExpenses();
     }
 
 });
@@ -975,6 +967,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
