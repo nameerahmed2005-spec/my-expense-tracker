@@ -478,18 +478,11 @@ logoutBtn.onclick = () => {
 };
 
 auth.onAuthStateChanged((user) => {
-    authChecked = true;
-    // FIRST TIME ONLY — auth fully resolved
-    if (!authResolved) {
 
-        authResolved = true;
-
-        // hide loading ONLY AFTER auth known
-        loadingScreen.style.display = "none";
-    }
+    // hide loading ONLY after Firebase decides
+    loadingScreen.style.display = "none";
 
     if (user) {
-        clearTimeout(loginTimeout);
 
         loginOverlay.style.display = "none";
         appContainer.style.display = "block";
@@ -521,21 +514,15 @@ auth.onAuthStateChanged((user) => {
 
     } else {
 
-    appContainer.style.display = "none";
-
-    userAvatar.style.display = "none";
-    userMenu.style.display = "none";
-
-    expenses = {};
-    renderExpenses();
-
-    // ⭐ Delay showing login screen to prevent flash
-    clearTimeout(loginTimeout);
-
-    loginTimeout = setTimeout(() => {
+        appContainer.style.display = "none";
         loginOverlay.style.display = "flex";
-    }, 400); // adjust between 300-500ms if needed
-}
+
+        userAvatar.style.display = "none";
+        userMenu.style.display = "none";
+
+        expenses = {};
+        renderExpenses();
+    }
 
 });
     
@@ -980,3 +967,4 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
