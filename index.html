@@ -459,16 +459,19 @@ prompt: "select_account"
     
 function startLogin() {
 
+    // Show loading immediately
+    loadingScreen.style.display = "flex";
+    loginOverlay.style.display = "none";
+    appContainer.style.display = "none";
+
     auth.signInWithPopup(provider)
     .catch(error => {
 
         console.log("Popup failed, switching to redirect...", error);
 
-        // fallback for mobile or popup-blocked browsers
         auth.signInWithRedirect(provider);
 
     });
-
 }
 
 overlayLoginBtn.onclick = startLogin;
@@ -480,7 +483,9 @@ logoutBtn.onclick = () => {
 auth.onAuthStateChanged((user) => {
 
     // hide loading ONLY after Firebase decides
-    loadingScreen.style.display = "none";
+    if (loadingScreen.style.display !== "none") {
+        loadingScreen.style.display = "none";
+    }
 
     if (user) {
 
@@ -967,4 +972,5 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
