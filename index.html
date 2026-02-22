@@ -416,22 +416,16 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 // VERY IMPORTANT for mobile redirect login
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-.then(() => {
-    console.log("Auth persistence enabled");
-})
-.catch((error) => {
-    console.error("Persistence error:", error);
-});
+firebase.auth().useDeviceLanguage();
 
-auth.getRedirectResult()
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().getRedirectResult()
 .then((result) => {
-    if (result.user) {
-        console.log("Redirect login success");
-    }
+    console.log("Redirect result checked");
 })
 .catch((error) => {
-    console.error("Redirect login error:", error);
+    console.error("Redirect error:", error);
 });
 
 let expensesRef = null;
@@ -453,13 +447,7 @@ prompt: "select_account"
 });
     
 function startLogin(){
-
-    auth.signInWithRedirect(provider)
-    .catch(err => {
-        console.error("Login error:", err);
-        alert("Login failed. Please try again.");
-    });
-
+    auth.signInWithRedirect(provider);
 }
 
 overlayLoginBtn.onclick = startLogin;
@@ -965,6 +953,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
