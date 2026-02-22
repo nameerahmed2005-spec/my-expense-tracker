@@ -275,15 +275,56 @@ li{
     touch-action:none;
 }
 
+#loginOverlay{
+transition:opacity 0.35s ease;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<div class="container">
+<!-- FULL SCREEN LOGIN OVERLAY -->
+<div id="loginOverlay" style="
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+background:radial-gradient(circle at top,#0b1220 0%,#070a12 60%,#05070d 100%);
+z-index:9999;
+">
+
+<div style="
+background:linear-gradient(145deg,#161a24,#0e1118);
+padding:40px;
+border-radius:20px;
+box-shadow:0 20px 50px rgba(0,0,0,0.6);
+text-align:center;
+">
+
+<h2 style="margin-top:0;">Expense Tracker</h2>
+<p style="opacity:0.7;">Login to continue</p>
+
+<button id="overlayLoginBtn" class="small-btn" style="margin-top:15px;">
+Login with Google
+</button>
+
+</div>
+</div>
+
+<div class="container" id="appContainer" style="display:none;">
 
 <button id="themeToggle" class="theme-toggle">🌙</button>
+
+<div id="authSection" style="text-align:right;margin-bottom:10px;">
+<button id="loginBtn" class="small-btn">Login with Google</button>
+<button id="logoutBtn" class="small-btn" style="display:none;">Logout</button>
+</div>
 
 <h2>Expense Tracker</h2>
 
@@ -307,6 +348,7 @@ li{
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
 
@@ -319,9 +361,74 @@ projectId:"expense-tracker-2796a"
 
 firebase.initializeApp(firebaseConfig);
 
-const db=firebase.database();
-const expensesRef=db.ref("expenses");
+const db = firebase.database();
+const auth = firebase.auth();
 
+let expensesRef = null;
+let expensesListener = null;
+
+const provider = new firebase.auth.GoogleAuthProvider();
+
+const loginBtn = document.getElementById("loginBtn");
+const overlayLoginBtn = document.getElementById("overlayLoginBtn");
+const loginOverlay = document.getElementById("loginOverlay");
+const appContainer = document.getElementById("appContainer");
+const logoutBtn = document.getElementById("logoutBtn");
+
+function startLogin(){
+    auth.signInWithPopup(provider);
+}
+
+loginBtn.onclick = startLogin;
+overlayLoginBtn.onclick = startLogin;
+
+logoutBtn.onclick = () => {
+    auth.signOut();
+};
+
+auth.onAuthStateChanged((user) => {
+
+    if(user){
+
+        loginOverlay.style.opacity="0";
+        setTimeout(()=>{
+            loginOverlay.style.display="none";
+        },350);
+
+        appContainer.style.display="block";
+
+        loginBtn.style.display="none";
+        logoutBtn.style.display="inline-block";
+
+        const uid = user.uid;
+
+        expensesRef = db.ref("expenses/" + uid);
+
+        if(expensesListener){
+            expensesRef.off("value", expensesListener);
+        }
+
+        expensesListener = (snapshot) => {
+            expenses = snapshot.val() || {};
+            renderExpenses();
+        };
+
+        expensesRef.on("value", expensesListener);
+
+    } else {
+
+        loginOverlay.style.opacity="1";
+        loginOverlay.style.display="flex";
+        appContainer.style.display="none";
+
+        loginBtn.style.display="inline-block";
+        logoutBtn.style.display="none";
+
+        expenses = {};
+        renderExpenses();
+    }
+
+});
 let expenses={};
 let editingID=null;
 let editingDate=null;
@@ -372,13 +479,6 @@ function getLogicalDate(){
 
     return local.toISOString().split("T")[0];
 }
-
-/* SYNC */
-
-expensesRef.on("value",(snapshot)=>{
-expenses=snapshot.val()||{};
-renderExpenses();
-});
 
 function formatDate(dateStr){
 
@@ -634,6 +734,11 @@ expenseList.appendChild(dayContainer);
 
 addBtn.onclick=()=>{
 
+if(!expensesRef){
+alert("Please login first");
+return;
+}
+
 if(!amount.value) return;
 
 const data={
@@ -747,3 +852,4 @@ document.addEventListener("touchend",(e)=>{
 
 </body>
 </html>
+
