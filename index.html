@@ -418,7 +418,15 @@ const auth = firebase.auth();
 // VERY IMPORTANT for mobile redirect login
 firebase.auth().useDeviceLanguage();
 
-
+auth.getRedirectResult()
+.then((result) => {
+    if (result.user) {
+        console.log("Redirect login successful");
+    }
+})
+.catch((error) => {
+    console.error("Redirect login error:", error);
+});
 
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 .then(() => {
@@ -432,6 +440,7 @@ let expensesRef = null;
 let expensesListener = null;
 let authResolved = false;
 let authChecked = false;
+let loginTimeout = null;
 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -468,41 +477,35 @@ logoutBtn.onclick = () => {
     auth.signOut();
 };
 
-// Replace your entire auth startup logic with this:
-
-// TRUE until getRedirectResult resolves AND we know final auth state
-let redirectPending = true;
-
-auth.getRedirectResult()
-.then((result) => {
-    if (result.user) {
-        console.log("Redirect login successful:", result.user.displayName);
-    }
-    // Only clear pending AFTER a small buffer
-    // giving onAuthStateChanged time to fire with the real user
-    setTimeout(() => { redirectPending = false; }, 500);
-})
-.catch((error) => {
-    console.error("Redirect login error:", error);
-    setTimeout(() => { redirectPending = false; }, 500);
-});
-
 auth.onAuthStateChanged((user) => {
+    authChecked = true;
+    // FIRST TIME ONLY — auth fully resolved
+    if (!authResolved) {
+
+        authResolved = true;
+
+        // hide loading ONLY AFTER auth known
+        loadingScreen.style.display = "none";
+    }
 
     if (user) {
-        // Logged in — show app immediately, no matter what
-        loadingScreen.style.display = "none";
+        clearTimeout(loginTimeout);
+
         loginOverlay.style.display = "none";
         appContainer.style.display = "block";
+
+        logoutBtn.style.display = "block";
         userAvatar.style.display = "block";
 
         userAvatar.src = user.photoURL
             ? user.photoURL
-            : "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || "User");
+            : "https://ui-avatars.com/api/?name=" +
+              encodeURIComponent(user.displayName || "User");
 
         userName.textContent = user.displayName || "User";
 
         const uid = user.uid;
+
         expensesRef = db.ref("expenses/" + uid);
 
         if (expensesListener) {
@@ -518,20 +521,21 @@ auth.onAuthStateChanged((user) => {
 
     } else {
 
-        // No user — but only show login if we're NOT mid-redirect
-        if (redirectPending) {
-            // Still processing redirect, keep showing loading screen
-            return;
-        }
+    appContainer.style.display = "none";
 
-        loadingScreen.style.display = "none";
+    userAvatar.style.display = "none";
+    userMenu.style.display = "none";
+
+    expenses = {};
+    renderExpenses();
+
+    // ⭐ Delay showing login screen to prevent flash
+    clearTimeout(loginTimeout);
+
+    loginTimeout = setTimeout(() => {
         loginOverlay.style.display = "flex";
-        appContainer.style.display = "none";
-        userAvatar.style.display = "none";
-        userMenu.style.display = "none";
-        expenses = {};
-        renderExpenses();
-    }
+    }, 400); // adjust between 300-500ms if needed
+}
 
 });
     
@@ -976,13 +980,3 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
