@@ -439,6 +439,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 let expensesRef = null;
 let expensesListener = null;
 let authResolved = false;
+let authChecked = false;
 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -476,7 +477,7 @@ logoutBtn.onclick = () => {
 };
 
 auth.onAuthStateChanged((user) => {
-
+    authChecked = true;
     // FIRST TIME ONLY — auth fully resolved
     if (!authResolved) {
 
@@ -517,9 +518,13 @@ auth.onAuthStateChanged((user) => {
         expensesRef.on("value", expensesListener);
 
     } else {
-
         appContainer.style.display = "none";
-        loginOverlay.style.display = "flex";
+
+        // DO NOT show login until auth fully checked
+        if (authChecked) {
+                loginOverlay.style.display = "flex";
+            }
+        }
 
         userAvatar.style.display = "none";
         userMenu.style.display = "none";
@@ -971,6 +976,7 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
 
