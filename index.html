@@ -279,12 +279,6 @@ li{
 transition:opacity 0.35s ease;
 }
 
-#authSection{
-position:absolute;
-top:15px;
-left:15px;
-}
-
 #userAvatar:hover{
 transform:scale(1.05);
 transition:0.2s;
@@ -351,39 +345,39 @@ Login with Google
 
 <div class="container" id="appContainer" style="display:none;">
 
-<button id="themeToggle" class="theme-toggle">🌙</button>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
 
-<div id="authSection">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <img id="userAvatar" style="
+        display:none;
+        width:40px;
+        height:40px;
+        border-radius:50%;
+        cursor:pointer;
+        ">
+        <h2 style="margin:0;">Expense Tracker</h2>
+    </div>
 
-<img id="userAvatar" style="
-display:none;
-width:40px;
-height:40px;
-border-radius:50%;
-cursor:pointer;
-">
+    <button id="themeToggle" class="theme-toggle" style="position:static;">
+        🌙
+    </button>
+
+</div>
 
 <div id="userMenu" style="
 display:none;
 position:absolute;
-top:50px;
-left:0;
+top:60px;
+left:20px;
 background:#161a24;
 border-radius:12px;
 padding:10px;
 min-width:150px;
 box-shadow:0 10px 30px rgba(0,0,0,0.5);
 ">
-
-<div id="userName" style="margin-bottom:10px;opacity:0.7;"></div>
-
-<button id="logoutBtn" class="small-btn">Logout</button>
-
+    <div id="userName" style="margin-bottom:10px;opacity:0.7;"></div>
+    <button id="logoutBtn" class="small-btn">Logout</button>
 </div>
-
-</div>
-
-<h2>Expense Tracker</h2>
 
 <input id="amount" type="number" placeholder="Amount">
 
@@ -965,5 +959,6 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
