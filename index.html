@@ -441,6 +441,7 @@ let expensesListener = null;
 let authResolved = false;
 let authChecked = false;
 let loginTimeout = null;
+    
 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -536,6 +537,9 @@ let editingID=null;
 let editingDate=null;
 let ghost = null;
 let touchDraggingID = null;
+
+let holdTimer = null;
+let longPressActive = false;
 
 /* MOBILE DETECTION */
 const isTouchDevice = 'ontouchstart' in window;
@@ -731,24 +735,36 @@ li.addEventListener("touchstart",(e)=>{
 
     if(!isTouchDevice) return;
 
+    longPressActive = false;
+
     const touch = e.touches[0];
 
-    touchDraggingID = exp.id;
+    // Start hold timer
+    holdTimer = setTimeout(()=>{
 
-    li.classList.add("dragging");
+        longPressActive = true;
+        if (navigator.vibrate) {
+            navigator.vibrate(10);
+        }
+        touchDraggingID = exp.id;
 
-    if(ghost){
-        ghost.remove();
-        ghost=null;
-    }
+        li.classList.add("dragging");
 
-    ghost = li.cloneNode(true);
-    ghost.classList.add("drag-ghost");
+        if(ghost){
+            ghost.remove();
+            ghost=null;
+        }
 
-    ghost.style.left = (touch.clientX + 10) + "px";
-    ghost.style.top  = (touch.clientY + 10) + "px";
+        ghost = li.cloneNode(true);
+        ghost.classList.add("drag-ghost");
 
-    document.body.appendChild(ghost);
+        ghost.style.left = (touch.clientX + 10) + "px";
+        ghost.style.top  = (touch.clientY + 10) + "px";
+
+        document.body.appendChild(ghost);
+
+    }, 600); // ⭐ adjust hold time (500–800ms recommended)
+
 });
 
 li.addEventListener("dragstart",(e)=>{
@@ -874,13 +890,18 @@ note.value="";
 
 document.addEventListener("touchmove",(e)=>{
 
+    // cancel long press if user moves before hold completes
+    if (!longPressActive && holdTimer) {
+        clearTimeout(holdTimer);
+    }
+
     if(!touchDraggingID || !ghost) return;
 
     e.preventDefault();
 
     const touch = e.touches[0];
 
-    /* AUTO SCROLL (mobile native feel) */
+    /* AUTO SCROLL */
 
     const margin = 80;
 
@@ -894,7 +915,7 @@ document.addEventListener("touchmove",(e)=>{
     ghost.style.left = (touch.clientX + 10) + "px";
     ghost.style.top  = (touch.clientY + 10) + "px";
 
-    /* LIVE HIGHLIGHT TARGET */
+    /* LIVE TARGET HIGHLIGHT */
 
     document.querySelectorAll("[data-day]").forEach(el=>{
         el.classList.remove("drop-target");
@@ -912,6 +933,11 @@ document.addEventListener("touchmove",(e)=>{
 /* MOBILE SAFETY CLEANUP */
 
 document.addEventListener("touchend",(e)=>{
+    clearTimeout(holdTimer);
+
+    if(!longPressActive){
+        return; // treat as normal tap
+    }
 
     if(!touchDraggingID) return;
 
@@ -972,5 +998,6 @@ if(!userAvatar.contains(e.target) && !userMenu.contains(e.target)){
 
 </body>
 </html>
+
 
 
