@@ -861,10 +861,7 @@ dayContainer.classList.remove("drop-success");
 });
 
 /* HEADER */
-
-let dayTotal=0;
-entries.forEach(e=>dayTotal+=Number(e.amount||0));
-
+    
 const header=document.createElement("div");
 header.className="day-header";
 header.textContent=`${formatDate(day)} — Daily Total Rs ${dayTotal}`;
