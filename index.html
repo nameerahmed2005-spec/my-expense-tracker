@@ -770,37 +770,25 @@ Object.entries(grouped)
     return new Date(b[0]) - new Date(a[0]); // newest first
 
 })
-.forEach(([day,entries], index, array)=>{
+// Track month
+const thisMonth = day !== "No Date"
+    ? day.substring(0, 7)
+    : null;
 
-// Track month change and display monthly total
-const thisMonth = day !== "No Date" ? day.substring(0, 7) : null;
+const isNewMonth = thisMonth !== currentMonth;
 
-if(currentMonth && thisMonth !== currentMonth){
-    // Month changed - display previous month's total
-    const monthName = new Date(currentMonth + "-01").toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
-    const monthSummary = document.createElement("div");
-    monthSummary.style.cssText = `
-        background: linear-gradient(145deg, #1a1f2e, #141824);
-        padding: 14px 20px;
-        margin: 20px 0;
-        border-radius: 12px;
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        font-weight: 600;
-        font-size: 15px;
-        color: var(--primary);
-        text-align: center;
-    `;
-    monthSummary.textContent = `${monthName} Total: Rs ${monthTotal}`;
-    expenseList.appendChild(monthSummary);
+if (isNewMonth) {
+    currentMonth = thisMonth;
     monthTotal = 0;
 }
 
-currentMonth = thisMonth;
 let dayTotal = 0;
+
 entries.forEach(e => {
     const amount = Number(e.amount || 0);
     const type = e.type || "Normal Expense";
-    if(type === "Normal Expense") {
+
+    if (type === "Normal Expense") {
         dayTotal += amount;
         monthTotal += amount;
     }
@@ -1003,22 +991,32 @@ expenseList.appendChild(dayContainer);
 
 });
 
-// Display final month total if exists
-if(currentMonth && monthTotal > 0){
-    const monthName = new Date(currentMonth + "-01").toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+// Show monthly total immediately after the month's latest entry
+if (isNewMonth && currentMonth) {
+
+    const monthName = new Date(currentMonth + "-01")
+        .toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        });
+
     const monthSummary = document.createElement("div");
+
     monthSummary.style.cssText = `
         background: linear-gradient(145deg, #1a1f2e, #141824);
-        padding: 16px 20px;
-        margin: 20px 0;
+        padding: 14px 20px;
+        margin: 10px 0 20px;
         border-radius: 12px;
         border: 1px solid rgba(34, 197, 94, 0.3);
         font-weight: 600;
-        font-size: 16px;
+        font-size: 15px;
         color: var(--primary);
         text-align: center;
     `;
-    monthSummary.textContent = `${monthName} Total: Rs ${monthTotal}`;
+
+    monthSummary.textContent =
+        `${monthName} Total: Rs ${monthTotal}`;
+
     expenseList.appendChild(monthSummary);
 }
 
