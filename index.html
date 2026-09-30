@@ -803,12 +803,90 @@ const sortedDays = Object.entries(grouped)
 
 /* ===== RENDER DAYS ===== */
 
-sortedDays.forEach(([day, entries]) => {
+sortedDays.forEach(([day, entries], index) => {
 
     const thisMonth = day !== "No Date"
         ? day.substring(0, 7)
         : null;
+    /* ===== MONTHLY TOTAL AT START OF MONTH ===== */
 
+const previousDay =
+    sortedDays[index - 1]
+    ? sortedDays[index - 1][0]
+    : null;
+
+const previousMonth =
+    previousDay && previousDay !== "No Date"
+    ? previousDay.substring(0, 7)
+    : null;
+
+
+/*
+   Since days are sorted newest → oldest:
+
+   September 30  ← first September day
+   September 29
+   September 28
+   ...
+
+   When previousMonth is different,
+   this is the FIRST day of a new month.
+
+   Therefore put the monthly total BEFORE this day.
+*/
+
+if(
+    thisMonth &&
+    thisMonth !== previousMonth
+){
+
+    const monthName =
+        new Date(thisMonth + "-01")
+            .toLocaleDateString(
+                "en-US",
+                {
+                    month: "long",
+                    year: "numeric"
+                }
+            );
+
+
+    const monthSummary =
+        document.createElement("div");
+
+
+    monthSummary.style.cssText = `
+        background:linear-gradient(
+            145deg,
+            #1a1f2e,
+            #141824
+        );
+
+        padding:14px 20px;
+
+        margin:10px 0 20px;
+
+        border-radius:12px;
+
+        border:1px solid
+            rgba(34,197,94,0.3);
+
+        font-weight:600;
+
+        font-size:15px;
+
+        color:var(--primary);
+
+        text-align:center;
+    `;
+
+
+    monthSummary.textContent =
+        `${monthName} Total: Rs ${monthlyTotals[thisMonth] || 0}`;
+
+
+    expenseList.appendChild(monthSummary);
+}
 
     /* ===== FULL DAY CONTAINER ===== */
 
@@ -1123,94 +1201,6 @@ sortedDays.forEach(([day, entries]) => {
     /* ===== ADD DAY TO LIST ===== */
 
     expenseList.appendChild(dayContainer);
-
-
-   /* ===== MONTHLY TOTAL ===== */
-
-/*
-   Days are sorted newest → oldest.
-
-   Therefore, when the NEXT day belongs
-   to a different month, this is the LAST
-   day of the current month.
-
-   We insert the monthly total AFTER
-   the current day's container.
-*/
-
-const nextDayIndex =
-    sortedDays.findIndex(
-        item => item[0] === day
-    ) + 1;
-
-const nextDay =
-    sortedDays[nextDayIndex]
-    ? sortedDays[nextDayIndex][0]
-    : null;
-
-const nextMonth =
-    nextDay && nextDay !== "No Date"
-    ? nextDay.substring(0,7)
-    : null;
-
-
-/* Last day of this month */
-
-if(
-    nextMonth !== thisMonth &&
-    thisMonth
-){
-
-    const monthName =
-        new Date(thisMonth + "-01")
-            .toLocaleDateString(
-                "en-US",
-                {
-                    month:"long",
-                    year:"numeric"
-                }
-            );
-
-
-    const monthSummary =
-        document.createElement("div");
-
-
-    monthSummary.style.cssText = `
-        background:linear-gradient(
-            145deg,
-            #1a1f2e,
-            #141824
-        );
-
-        padding:14px 20px;
-
-        margin:10px 0 20px;
-
-        border-radius:12px;
-
-        border:1px solid
-            rgba(34,197,94,0.3);
-
-        font-weight:600;
-
-        font-size:15px;
-
-        color:var(--primary);
-
-        text-align:center;
-    `;
-
-
-    monthSummary.textContent =
-        `${monthName} Total: Rs ${monthlyTotals[thisMonth] || 0}`;
-
-
-    expenseList.appendChild(
-        monthSummary
-    );
-
-}
 
 });
 
