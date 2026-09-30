@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#05070d">
@@ -196,6 +197,17 @@ body.light .theme-toggle{
 background:#f1f5f9;
 }
 
+/* Light mode for summary cards */
+body.light #totalLoaned,
+body.light #totalDebt{
+color:#111;
+}
+
+body.light div[style*="background:linear-gradient(145deg,#0f1420,#0c1019)"]{
+background:linear-gradient(145deg,#f7f8fb,#ffffff) !important;
+border:1px solid #e5e7eb !important;
+}
+
 /* WHITE BUTTON TEXT */
 .small-btn{
 color:white;
@@ -384,6 +396,14 @@ box-shadow:0 10px 30px rgba(0,0,0,0.5);
 
 <input id="amount" type="number" placeholder="Amount">
 
+<select id="type">
+<option>Normal Expense</option>
+<option>Debt</option>
+<option>Loaned</option>
+</select>
+
+<input id="personName" placeholder="Person Name (for Debt/Loaned)" style="display:none;">
+
 <select id="category">
 <option>Food</option>
 <option>Travel</option>
@@ -394,7 +414,34 @@ box-shadow:0 10px 30px rgba(0,0,0,0.5);
 
 <button id="addBtn">Add</button>
 
-<h3 id="grandTotal">Grand Total Rs 0</h3>
+<!-- Summary Cards -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0;">
+
+    <div style="
+        background:linear-gradient(145deg,#0f1420,#0c1019);
+        padding:18px;
+        border-radius:14px;
+        border:1px solid #141a26;
+    ">
+        <div style="opacity:0.6; font-size:11px; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Total Loaned</div>
+        <div id="totalLoaned" style="font-size:32px; font-weight:700; color:#3b82f6; margin-bottom:14px; line-height:1;">Rs 0</div>
+        <div id="loanedBreakdown" style="font-size:12px; opacity:0.65; line-height:1.8; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);"></div>
+    </div>
+
+    <div style="
+        background:linear-gradient(145deg,#0f1420,#0c1019);
+        padding:18px;
+        border-radius:14px;
+        border:1px solid #141a26;
+    ">
+        <div style="opacity:0.6; font-size:11px; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Total Debt</div>
+        <div id="totalDebt" style="font-size:32px; font-weight:700; color:#ef4444; margin-bottom:14px; line-height:1;">Rs 0</div>
+        <div id="debtBreakdown" style="font-size:12px; opacity:0.65; line-height:1.8; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);"></div>
+    </div>
+
+</div>
+
+<h3 id="grandTotal">Grand Total Expenses Rs 0</h3>
 
 <ul id="expenseList"></ul>
 
@@ -550,16 +597,30 @@ const isTouchDevice = 'ontouchstart' in window;
 const addBtn=document.getElementById("addBtn");
 const themeBtn=document.getElementById("themeToggle");
 const grandTotalEl=document.getElementById("grandTotal");
+const totalLoanedEl=document.getElementById("totalLoaned");
+const totalDebtEl=document.getElementById("totalDebt");
+const typeSelect=document.getElementById("type");
+const personNameInput=document.getElementById("personName");
+
+/* Show/hide person name field based on type */
+typeSelect.onchange=()=>{
+    if(typeSelect.value === "Debt" || typeSelect.value === "Loaned"){
+        personNameInput.style.display="block";
+    } else {
+        personNameInput.style.display="none";
+        personNameInput.value="";
+    }
+};
 
 /* THEME */
 
 function applyTheme(){
 if(localStorage.getItem("theme")==="light"){
 document.body.classList.add("light");
-themeBtn.textContent="🌙";
+themeBtn.innerHTML="&#127769;";
 }else{
 document.body.classList.remove("light");
-themeBtn.textContent="☀️";
+themeBtn.innerHTML="&#9728;&#65039;";
 }
 }
 
@@ -636,6 +697,10 @@ const expenseList = document.getElementById("expenseList");
 expenseList.innerHTML="";
 
 let grandTotal=0;
+let totalLoaned=0;
+let totalDebt=0;
+let loanedByPerson={};
+let debtByPerson={};
 let grouped={};
 
 Object.entries(expenses).forEach(([id,exp])=>{
@@ -646,13 +711,55 @@ if(!grouped[date]) grouped[date]=[];
 
 grouped[date].push({id,...exp});
 
-grandTotal+=Number(exp.amount||0);
+const amount = Number(exp.amount||0);
+const type = exp.type || "Normal Expense";
+const personName = exp.personName || "Unknown";
+
+if(type === "Loaned"){
+    totalLoaned += amount;
+    if(!loanedByPerson[personName]) loanedByPerson[personName]=0;
+    loanedByPerson[personName] += amount;
+} else if(type === "Debt"){
+    totalDebt += amount;
+    if(!debtByPerson[personName]) debtByPerson[personName]=0;
+    debtByPerson[personName] += amount;
+} else {
+    grandTotal += amount;
+}
 
 });
 
 grouped=generateFullDateRange(grouped);
 
-grandTotalEl.textContent="Grand Total Rs "+grandTotal;
+grandTotalEl.textContent="Grand Total Expenses Rs "+grandTotal;
+totalLoanedEl.textContent="Rs "+totalLoaned;
+totalDebtEl.textContent="Rs "+totalDebt;
+
+// Update breakdown displays
+const loanedBreakdownEl = document.getElementById("loanedBreakdown");
+const debtBreakdownEl = document.getElementById("debtBreakdown");
+
+loanedBreakdownEl.innerHTML = Object.entries(loanedByPerson)
+    .sort((a,b) => b[1] - a[1])
+    .map(([name, amt]) => `<div style="margin-bottom:4px;">&bull; ${name}: Rs ${amt}</div>`)
+    .join("");
+
+debtBreakdownEl.innerHTML = Object.entries(debtByPerson)
+    .sort((a,b) => b[1] - a[1])
+    .map(([name, amt]) => `<div style="margin-bottom:4px;">&bull; ${name}: Rs ${amt}</div>`)
+    .join("");
+
+// Group days by month for monthly totals
+const byMonth = {};
+Object.keys(grouped).forEach(day => {
+    if(day === "No Date") return;
+    const monthKey = day.substring(0, 7); // "2026-09" format
+    if(!byMonth[monthKey]) byMonth[monthKey] = [];
+    byMonth[monthKey].push(day);
+});
+
+let currentMonth = null;
+let monthTotal = 0;
 
 Object.entries(grouped)
 .sort((a,b)=>{
@@ -663,7 +770,47 @@ Object.entries(grouped)
     return new Date(b[0]) - new Date(a[0]); // newest first
 
 })
-.forEach(([day,entries])=>{
+.forEach(([day,entries], index, array)=>{
+
+// Track month change and display monthly total
+const thisMonth = day !== "No Date" ? day.substring(0, 7) : null;
+
+if(currentMonth && thisMonth !== currentMonth){
+    // Month changed - display previous month's total
+    const monthName = new Date(currentMonth + "-01").toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+    const monthSummary = document.createElement("div");
+    monthSummary.style.cssText = `
+        background: linear-gradient(145deg, #1a1f2e, #141824);
+        padding: 14px 20px;
+        margin: 20px 0;
+        border-radius: 12px;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--primary);
+        text-align: center;
+    `;
+    monthSummary.textContent = `${monthName} Total: Rs ${monthTotal}`;
+    expenseList.appendChild(monthSummary);
+    monthTotal = 0;
+}
+
+currentMonth = thisMonth;
+let dayTotal = 0;
+entries.forEach(e => {
+    const amount = Number(e.amount || 0);
+    const type = e.type || "Normal Expense";
+    if(type === "Normal Expense") {
+        dayTotal += amount;
+        monthTotal += amount;
+    }
+});
+
+// Check if this is the last day - if so, show month total at end
+const isLastDay = index === array.length - 1;
+if(isLastDay && currentMonth){
+    // Will display at the end after all days
+}
 
 /* ===== FULL DAY CONTAINER (PRO DROP ZONE) ===== */
 
@@ -805,7 +952,10 @@ ghost=null;
 });
 
 const text=document.createElement("span");
-text.textContent=`Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
+const type = exp.type || "Normal Expense";
+const typeLabel = type !== "Normal Expense" ? `[${type}] ` : '';
+const personLabel = exp.personName ? `${exp.personName} - ` : '';
+text.textContent=`${typeLabel}${personLabel}Rs ${exp.amount} - ${exp.category||''} ${exp.note?'('+exp.note+')':''}`;
 
 const editBtn=document.createElement("button");
 editBtn.textContent="Edit";
@@ -821,11 +971,18 @@ deleteBtn.addEventListener("mousedown",e=>e.stopPropagation());
 
 editBtn.onclick=()=>{
 amount.value=exp.amount;
+typeSelect.value=exp.type || "Normal Expense";
+personNameInput.value=exp.personName || "";
 category.value=exp.category;
 note.value=exp.note;
 editingID=exp.id;
 editingDate=exp.date;
 addBtn.textContent="Update";
+
+// Show person name field if type is Debt or Loaned
+if(exp.type === "Debt" || exp.type === "Loaned"){
+    personNameInput.style.display="block";
+}
 };
 
 deleteBtn.onclick=()=>{
@@ -849,6 +1006,25 @@ expenseList.appendChild(dayContainer);
 
 });
 
+// Display final month total if exists
+if(currentMonth && monthTotal > 0){
+    const monthName = new Date(currentMonth + "-01").toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+    const monthSummary = document.createElement("div");
+    monthSummary.style.cssText = `
+        background: linear-gradient(145deg, #1a1f2e, #141824);
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 12px;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--primary);
+        text-align: center;
+    `;
+    monthSummary.textContent = `${monthName} Total: Rs ${monthTotal}`;
+    expenseList.appendChild(monthSummary);
+}
+
 }
 
 /* ADD / UPDATE */
@@ -864,6 +1040,8 @@ if(!amount.value) return;
 
 const data={
 amount:amount.value,
+type:typeSelect.value,
+personName:personNameInput.value,
 category:category.value,
 note:note.value
 };
