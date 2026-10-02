@@ -780,7 +780,7 @@ Object.entries(grouped).forEach(([day, entries]) => {
         const amount = Number(e.amount || 0);
         const type = e.type || "Normal Expense";
 
-        if(type === "Normal Expense" || type == "Loaned"){
+        if(type === "Normal Expense" || type === "Loaned"){
             monthlyTotals[monthKey] += amount;
         }
 
@@ -951,7 +951,7 @@ if(
         const amount = Number(e.amount || 0);
         const type = e.type || "Normal Expense";
 
-        if(type === "Normal Expense" || type == "Loaned"){
+        if(type === "Normal Expense" || type === "Loaned"){
             dayTotal += amount;
         }
 
