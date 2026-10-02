@@ -719,11 +719,11 @@ if(type === "Loaned"){
     totalLoaned += amount;
     if(!loanedByPerson[personName]) loanedByPerson[personName]=0;
     loanedByPerson[personName] += amount;
+    grandTotal += amount;
 } else if(type === "Debt"){
     totalDebt += amount;
     if(!debtByPerson[personName]) debtByPerson[personName]=0;
     debtByPerson[personName] += amount;
-    grandTotal += amount;
 } else {
     grandTotal += amount;
 }
@@ -780,7 +780,7 @@ Object.entries(grouped).forEach(([day, entries]) => {
         const amount = Number(e.amount || 0);
         const type = e.type || "Normal Expense";
 
-        if(type === "Normal Expense" || type == "debt"){
+        if(type === "Normal Expense" || type == "Loaned"){
             monthlyTotals[monthKey] += amount;
         }
 
